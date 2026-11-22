@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| Status | **DRAFT v1** (2026-11-22), drafted during review R1 under the same-day deadline; nothing is built until approval |
+| Status | **v2** (2026-11-22, after R1), for approval. Package tasks T01–T04 were built on branch `pre-approval` during R1 (deadline mode, logged) |
 | Spec | `specs/001-trimmed-mean/spec.md` |
 
 Every design choice has its reason next to it, so Luis can defend it.
@@ -55,14 +55,14 @@ data/ · testdata/r-reference/ · results/
 | `run` returns an exit code; `main` only calls `os.Exit(run(…))` | Testable without a subprocess, and the built-binary tests still check the real codes (L-W6-14). |
 | Kind detected from the content (every line an integer → `[]int`) | The user doesn't need a flag, and integer samples exercise the generic integer path (S2). |
 | Comparison writes to a temporary file and renames | No half-written results on failure (spec §8.3). |
-| `go.mod` requires `trimmedmean v1.0.0`; `go.sum` from the Mac | L-W7-06; the workspace builds with `GOPROXY=direct GOSUMDB=off` in its own environment only, never committed. |
+| `go.mod` requires `trimmedmean v0.1.0`, then `v1.0.0` at final acceptance (Q6); `go.sum` from the Mac | L-W7-06; the workspace builds with `GOPROXY=direct GOSUMDB=off` in its own environment only, never committed. |
 | Measurement is benchmarks + one profiled comparison run, not R timing | The assignment asks for agreement with R, not speed against R; the rubric's "memory and processing requirements" is met by `-benchmem` and profiles. |
 
 ## 3. Release and hand-off sequence
 
 1. Package tasks T01–T06 in the workspace; push.
-2. **Mac:** `git tag v1.0.0 && git push origin v1.0.0` in the package (T07), then in the program
-   `go get github.com/mioluigi/trimmedmean@v1.0.0 && go mod tidy`, commit `go.mod`/`go.sum`, push (T08).
+2. **Mac:** merge `pre-approval`, `git tag v0.1.0 && git push origin v0.1.0` in the package (T07), then in the
+   program `go get github.com/mioluigi/trimmedmean@v0.1.0 && go mod tidy`, commit `go.mod`/`go.sum`, push (T08).
 3. Program tasks T09–T12 in the workspace; push.
 4. **Mac:** `scripts/measure.sh` (freshness guard; comparison, benchmarks, profiles) → `results/`; push (T13).
-5. READMEs with generated tables (T14); R2; acceptance on fresh clones (Mac).
+5. READMEs with generated tables (T14); R2; **Mac:** tag `v1.0.0`, `go get …@v1.0.0` in the program, acceptance on fresh clones (T15).

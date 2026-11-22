@@ -5,6 +5,12 @@ were taken under the deadline with Claude's recommendation, for Luis to overturn
 
 ## 2026-11-22
 
+- **Review R1 triaged** (`docs/reviews/001-spec-review.md`): 11 accepted or adjusted, 1 rejected after a test
+  (4.1), 2 inaccurate reviewer statements recorded. Spec, plan and tasks → v2.
+- **Correction of our own spec (v1 FR-5):** the claim that float64 rounding of `n × p` could reach `n/2` for
+  very large `n` was wrong; tests and analysis show it cannot below 2^53. Spec v2 FR-5 says so; the guard stays.
+- **Q6 recommendation changed after R1:** `v0.1.0` for the build, `v1.0.0` after R2 fixes. *Docs:* spec Q6,
+  plan §3, tasks T07, T08, T15.
 - **Package tasks T01–T02 started during R1 on branch `pre-approval` of `trimmedmean`, merged only after
   approval** (deadline mode). Risk: rework if R1 changes the API. **(on Luis's behalf)**
 - **Float samples use 4 decimals, not 17 digits** (spike 001 addendum A): R's 17-digit read-back failed on the

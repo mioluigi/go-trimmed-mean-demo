@@ -1,0 +1,259 @@
+Bundle Inventory
+All five required files are present in the bundle (commit bddebe3):
+   ●​ docs/assignment-and-rubric.md — first line: # Assignment Requirements and Rubric
+       (summary) (commit bddebe3 is on the bundle header)
+   ●​ docs/constitution.md — first line: # Project Constitution: Create a Go Package (trimmed
+       mean)
+   ●​ docs/spikes/001-environment-and-r-reference.md — first line: # Spike 001: environment,
+       R's trimmed mean, and publishing a module
+   ●​ testdata/r-reference/semantics.tsv — first line: expression result
+   ●​ specs/001-trimmed-mean/spec.md — first line: # Spec 001: Trimmed mean package and
+       demonstration program
+(Note: The bundle header names commit bddebe3, while none of the five files has a commit
+hash on its first line.)
+1. Coverage gaps
+  ●​ Severity: High
+  ○​ Where: specs/001-trimmed-mean/spec.md §4 (FR-R4), §5 (FR-8, FR-9), §9 (AC-13);
+     docs/assignment-and-rubric.md (S7, S9, [Doc]); docs/constitution.md (5.1, 5.3)
+  ○​ Problem: spec.md §9 (AC-13) requires the package README to cover "install, use,
+     errors, limits, R differences, tests, licence" and the program README to cover "roles, get
+     and use, build, run, test, results, limits, GenAI Tools", yet neither the functional
+     requirements (§4–§5) nor AC-13 specifies concrete instructions for getting and using the
+     package in external Go code (e.g., go get, import, handling (float64, error)), nor does
+     spec.md require docs/ai-dialogs/ with a README.md index as mandated by constitution
+     5.3 ("AI dialogs in docs/ai-dialogs/ with a README.md index").
+  ○​ Suggested change: A test/check can verify that both README.md files exist, contain
+     non-empty sections for every item in constitution 5.1 and 5.3 (including
+     docs/ai-dialogs/README.md), and include a compilable Go snippet in the READMEs (or
+     an Example test) showing go get, import, and error handling.
+  ●​ Severity: High
+  ○​ Where: specs/001-trimmed-mean/spec.md §5 (FR-8, FR-9), §9 (AC-9, AC-10);
+     docs/constitution.md (6.2, 6.3, 6.4); docs/assignment-and-rubric.md (S6, [A])
+  ○​ Problem: S6 requires testing against R's mean(x, trim = 0.05) using samples of "at least
+     100 integers and 100 floats", and constitution 6.2 requires the program to run with no
+     arguments "on the committed samples", but spec.md §5 (FR-8) only mentions "every
+     committed sample in data/" and "every case in testdata/r-reference/trimmed-means.tsv"
+     without stating a minimum sample size (>= 100 integers and >= 100 floats) or requiring
+     plain-language output of what was computed, from which data, and how it compares to
+     R (constitution 6.4).
+  ○​ Suggested change: A test can check that data/ contains at least one integer sample
+     with >= 100 values and at least one float sample with >= 100 values, that default
+     execution (trim = 0.05) runs on them, and that stdout of a finished run contains the
+     dataset name/path, computed value, and R comparison status.
+ ●​ Severity: Medium
+ ○​ Where: specs/001-trimmed-mean/spec.md §4 (FR-R3), §6 (NFR-2, NFR-3), §9 (AC-11);
+    docs/constitution.md (3.3, 3.4, 3.5); docs/assignment-and-rubric.md ([T])
+ ○​ Problem: Constitution 3.3 requires "a CPU and memory profile of the program on the
+    largest committed sample" and structured logs to stderr, and 3.5 requires testing
+    scripts/guards on both a passing and a failing case on the built binary, while spec.md only
+    states "a CPU and memory profile of the comparison run" (NFR-3) and does not require a
+    test of acceptance/guard scripts on both pass and fail inputs.
+ ○​ Suggested change: A test can run the profile flag/command on the largest committed
+    sample (n >= 100 or largest file in data/), verify non-empty profile output and stderr logs,
+    and run the guard/acceptance check against both valid and intentionally invalid fixtures,
+    verifying non-zero exit on failure.
+ ●​ Severity: Medium
+ ○​ Where: specs/001-trimmed-mean/spec.md §4 (FR-1–FR-6); docs/constitution.md (2.6);
+    docs/assignment-and-rubric.md ([C])
+ ○​ Problem: spec.md §4 (FR-R3) and §6 (NFR-1) mention doc comments on exported
+    identifiers and gofmt/go vet, but do not specify exact exported symbol names (e.g.,
+    Mean and sentinel error names in FR-4 are named, while Number constraint and any
+    helper types/functions are unspecified) or check doc-comment coverage on all
+    exported symbols.
+ ○​ Suggested change: A check (go doc / AST inspection) can verify that every exported
+    identifier in trimmedmean has a non-empty doc comment and that gofmt -l . and go vet
+    ./... produce zero output.
+2. Contradictions
+ ●​ Severity: High
+ ○​ Where: specs/001-trimmed-mean/spec.md §4 (FR-4), §8.1 (Boundaries), §8.2
+    (Deliberate differences from R); docs/constitution.md (1.2, 2.7);
+    docs/spikes/001-environment-and-r-reference.md (Addendum B, P2)
+ ○​ Problem: spec.md §8.1 says ±Inf values are "Allowed if the result is finite" and in §8.2 says
+    "±Inf kept, result NaN → ErrNotFinite", whereas spec.md §4 (FR-4) states ErrNotFinite is
+    returned when "the result is NaN or infinite even after R's overflow fallback"—which
+    conflicts with ±Inf being "Allowed if the result is finite" when a finite trimmed mean is
+    produced from ±Inf inputs (e.g., mean(c(-Inf, 1:8, Inf), trim = 0.1) = 4.5 in semantics.tsv).
+    Furthermore, FR-4 requires "Each error message names the offending value", while
+    FR-R4 / 8.1 specifies fixed/formatted messages like no numbers in FILE and trim
+    proportion 0.6 is outside [0, 0.5).
+ ○​ Suggested change: A test can assert that when ±Inf values are trimmed out and the
+    result is finite, Mean returns the finite result without ErrNotFinite, whereas when ±Inf
+    remains in the kept window and yields ±Inf or NaN, errors.Is(err, ErrNotFinite) is true;
+    error-message tests can check that ErrProportion includes the offending proportion
+    value and ErrNaN / line N includes the offending value/line.
+ ●​ Severity: Medium
+  ○​ Where: specs/001-trimmed-mean/spec.md §3 (Definitions), §4 (FR-1, FR-5), §8.1
+     (Boundaries); docs/constitution.md (1.2, 8.3)
+  ○​ Problem: spec.md §3 states proportions are "computed in float64 exactly as R
+     computes floor(n * trim)", and FR-5 notes that for very large n, n * p in float64 can round
+     up to n/2 (which would violate p < 0.5 or leave zero kept elements if dropLow + dropHigh
+     >= n), while §8.1 states proportions in [0, 0.5) are supported and >= 0.5 returns
+     ErrProportion. There is no test or rule for boundary values like 0.49999999999999994
+     (math.Nextafter(0.5, 0)) when n is large.
+  ○​ Suggested change: A test can pass trim = math.Nextafter(0.5, 0) across small and large
+     n and assert that dropLow + dropHigh < n (at least 1 element remains) or errors.Is(err,
+     ErrProportion) is returned if dropLow + dropHigh >= n.
+3. Untestable requirements
+ ●​ Severity: High
+ ○​ Where: specs/001-trimmed-mean/spec.md §1 (Problem), §2 (Users), §6 (NFR-1), §8.4
+    (Unintended consequences)
+ ○​ Problem: Phrases such as "any Go program can fetch with go get and trust", "A Go
+    consulting firm wants to promote its services", "clean UX/UI", and "functions short and
+    single-purpose" in a specification cannot be directly verified by a deterministic
+    automated test or single file check without concrete thresholds or observable outputs.
+ ○​ Suggested change: Replace subjective phrasing in acceptance checks with verifiable
+    properties: a test can run go get from a clean environment, check CLI exit
+    codes/stdout/stderr formatting, and measure function line counts or cyclomatic
+    complexity if a length threshold is desired.
+ ●​ Severity: Medium
+ ○​ Where: specs/001-trimmed-mean/spec.md §4 (FR-6), §6 (NFR-6), §9 (AC-4)
+ ○​ Problem: "never panics on any input" (even with a 30-second fuzz test) and "Tests need
+    neither R nor the internet" cannot prove absence of panics across all possible inputs or
+    network calls in every environment.
+ ○​ Suggested change: A test can run go test -fuzz=... -fuzztime=30s with zero panics and
+    run go test ./... with GOPROXY=off and without Rscript/R in PATH to verify offline/no-R
+    execution.
+4. Domain risks
+ ●​ Severity: High — Trimmed mean definition, floor(n * p), and asymmetric definition
+ ○​ Where: specs/001-trimmed-mean/spec.md §3 (Definitions), §4 (FR-2, FR-5), §9 (AC-1,
+    AC-2, AC-6); docs/spikes/001-environment-and-r-reference.md (§3 P1, Addendum B)
+ ○​ Problem: dropLow = floor(n * low) and dropHigh = floor(n * high) in float64 (as in 100 *
+    0.29 = 28.999999999999996 → 28) can drop asymmetric counts even when low == high
+    if float64 rounding differs, and for asymmetric trimming (low != high), dropLow and
+    dropHigh are computed independently from n. If n is small (e.g., n = 2 with low = 0.4, high
+    = 0.4), floor(2 * 0.4) = 0 on both ends, which is fine, but if low + high approaches 1.0 (e.g.,
+    low = 0.49, high = 0.49 on n = 100), 2 * floor(49) = 98 leaves 2 elements, whereas on n = 1
+    with low = 0.49, high = 0.49, floor(0.49) = 0 leaves 1 element. The spec does not state a
+    requirement for low + high < 1.0 when two proportions are passed.
+○​ Suggested change: A test can verify dropLow and dropHigh against
+    math.Floor(float64(n) * p) for n = 0..105 and proportions including 0.29, 0.05, 0.1, 0.2, and
+    0.4999, asserting 0 <= dropLow, 0 <= dropHigh, and dropLow + dropHigh < n for valid
+    inputs.
+●​ Severity: High — Integer vs. float paths, precision, and comparison rule / tolerance
+   (§7)
+○​ Where: specs/001-trimmed-mean/spec.md §3 (Definitions), §4 (FR-1, FR-4), §7
+    (Comparison rule with R), §8.1 (Boundaries);
+    docs/spikes/001-environment-and-r-reference.md (§3 P3–P6, Addendum B)
+○​ Problem: In Go, int is 64-bit on 64-bit platforms (int64 max ~9.22e18), whereas float64
+    has 53 bits of significand precision (2^53 ≈ 9.007e15). Converting large integers (> 2^53)
+    or summing values in float64 loses precision, and R's integer mean() uses a single sum
+    (numeric in R is float64, so sum(x)/n in R can overflow or lose precision differently from
+    Go's float64 accumulation). Also, in §7, "exact agreement with R's mean of the fully
+    sorted kept values" for trimmed symmetric float rows may fail by 1–2 ULPs if Go's float64
+    two-pass summation order or overflow fallback differs by even 1 ULP from R's full-sort
+    mean on aarch64-apple-darwin.
+○​ Suggested change: A test can compare Go's output on
+    testdata/r-reference/trimmed-means.tsv and *-as-read-by-r.txt against R's values,
+    asserting 0 ULP difference on integer, untrimmed, and asymmetric rows, and asserting
+    |Go - R_builtin| <= 1e-14 * mean(|kept|) (and checking ULP difference against R's full-sort
+    reference) on symmetric trimmed float rows.
+●​ Severity: High — Module publishing, versioning, go.sum, and proxy/cache behavior
+○​ Where: specs/001-trimmed-mean/spec.md §4 (FR-R1, FR-R2), §5 (FR-7), §9 (AC-7,
+    AC-8); docs/constitution.md (4.1, 4.2, 4.4, 9.2);
+    docs/spikes/001-environment-and-r-reference.md (§1, §4 P7–P8, §5 #2)
+○​ Problem: Because the workspace cannot reach proxy.golang.org or sum.golang.org
+    (HTTP 403), go.sum and tag resolution cannot be verified in the workspace. If a tag is
+    pushed before tests pass or if replace / go.work is left in go.mod or go.sum is stale, go
+    build -mod=readonly on a fresh clone will fail, and a bad tag cannot be moved (9.2).
+○​ Suggested change: A test/check can parse go.mod in both repositories to assert zero
+    replace directives, no go.work file in the repo root, and that acceptance runs go build
+    -mod=readonly in a fresh temporary directory with a clean GOMODCACHE on the Mac
+    after the tag is pushed.
+●​ Severity: Medium — API design (generics, variadic proportions, errors) and
+   deliberate differences from R (§8.2) & §8
+○​ Where: specs/001-trimmed-mean/spec.md §3 (Definitions), §4 (FR-1–FR-6), §8.1–§8.4;
+    docs/constitution.md (1.2, 2.7, 2.8, 4.1)
+○​ Problem: Variadic proportions ...float64 allows 0, 1, 2, or 3+ arguments, which moves
+    arity checking (> 2 proportions) from compile time to runtime (ErrProportionCount), and
+    NaN in proportions must be checked explicitly because NaN < 0 and NaN >= 0.5 both
+    evaluate to false in IEEE-754 comparisons. Also, §8.2 lists "very large values whose sum
+     overflows" as a deliberate difference or shared behaviour, while §8.2's "Why" column says
+     "no needless error" for overflow but "no silent NaN" for ±Inf kept—which could confuse
+     readers about whether overflow is a difference or a match with R.
+  ○​ Suggested change: A test can call Mean with 0, 1, 2, and 3 proportion arguments, with
+     NaN and ±Inf proportions, and with NaN / ±Inf values, verifying exact errors.Is matches
+     (ErrProportionCount, ErrProportion, ErrNaN, ErrNotFinite, ErrEmpty) and
+     non-zero/expected CLI exit codes.
+5. Evidence check
+ ●​ Addendum A (2026-11-22 17:55)
+ ○​ Supported: The failure of stopifnot(identical(values_read, values)) when reading %.17g
+    back via as.numeric on a platform with sizeof long double == 8 is consistent with
+    decimal-to-binary rounding behavior, and parse-check.tsv / *-as-read-by-r.txt are cited
+    as the evidence artifacts.
+ ○​ Condition / prediction gap: The hypothesis that R's R_strtod 8-byte long double
+    accumulation explains the exact 17-digit mismatch count is plausible, but the addendum
+    does not show R_strtod source behavior or compare against strtod directly; it only
+    observes round-trip differences on the Mac and that 4-decimal formatting had 0
+    differences across 1,201 values in Addendum B.
+ ●​ Addendum B (2026-11-22 18:05)
+ ○​ Prediction A: Supported by cited parse-check.tsv and *-as-read-by-r.txt counts
+    (28/100, 23/101, 268/1,000 round-trip differences; 0/1,201 with 4 decimals).
+ ○​ Prediction P1: Supported by semantics.tsv rows (floor(100 * 0.29) = 28, floor(100 * 0.07)
+    = 7, floor(101 * 0.05) = 5, floor(57 * 0.1) = 5).
+ ○​ Prediction P2: Supported by semantics.tsv rows for negative trim (-0.1 → 22), 0.5/0.7 →
+    median 3, NA/NaN → NA, empty numeric(0) → NaN, and length-2 / NA trim → ERROR:
+    'trim' must be numeric of length one.
+ ○​ Prediction P3: Supported by the stated 24/24 integer rows matching full-sort mean in
+    trimmed-means.tsv (assuming values < 2^53).
+ ○​ Prediction P4: Partially supported/qualified: 20/24 double rows differed from R's
+    full-sort mean (up to 303 ULPs, worst relative gap 4.7 × 10^-16 scaled by mean absolute
+    kept value), but the condition in §3 P4 predicted "Go uses R's two-pass mean" and noted
+    sizeof long double on arm64, without yet showing Go's own two-pass output vs. R's
+    full-sort mean on the Mac.
+ ○​ Prediction P5: Correctly marked Failed based on identical_as_double (12/24 integer
+    rows differed from double input) and the single-pass check across 42 integer rows.
+ ○​ Prediction P6: Correctly marked Failed based on semantics.tsv (mean(c(1e308, 1e308))
+    returned 1.0000000000000006e+308 rather than Inf, revealing R's overflow fallback).
+ ○​ Prediction P7: Properly marked pending (T07)—untested so far.
+ ○​ Prediction P8: Cited as Held in env-mac.txt, though the exact output of go list -m
+    [github.com/mioluigi/go-applied-statistics@latest](https://github.com/mioluigi/go-applie
+    d-statistics@latest) is not quoted in the bundle.
+6. View on open decisions Q1–Q7
+ ●​ Q1 (API shape — variadic Mean(values, proportions...)): Agree with the
+    recommendation. It directly matches 0, 1, or 2 trimming proportions and returns
+    ErrProportionCount for > 2, keeping a single entry point for callers.
+ ●​ Q2 ("Integers and/or floats" — generics [T Number]): Agree with the
+    recommendation. A generic constraint over Go integer and float types preserves
+    compile-time type safety and avoids any type assertions, while converting a mixed
+    collection to []float64 at the call site is idiomatic in Go.
+ ●​ Q3 (Infinite values — allow ±Inf, reject NaN or infinite result with ErrNotFinite):
+    Agree with a condition: allow ±Inf inputs when they are trimmed or cancel/resolve to a
+    finite value, and return ErrNotFinite whenever the resulting trimmed mean is NaN or ±Inf.
+    Ensure §4 (FR-4) and §8.1–§8.2 state this consistently.
+ ●​ Q4 (trim >= 0.5 — reject with ErrProportion): Agree with the recommendation.
+    Returning a median from a function named Mean is surprising in Go; returning
+    ErrProportion with a clear message noting R's median behavior satisfies both safety and
+    transparency (1.2, §8.2).
+ ●​ Q5 (Asymmetric flag syntax — -trim "low,high"): Agree with the recommendation. A
+    single -trim flag accepting either "p" or "low,high" mirrors the variadic Mean signature
+    cleanly and keeps CLI flags minimal.
+ ●​ Q6 (First release version — v1.0.0): Argue for v0.1.0 (or v1.0.0 only after R2 sign-off)
+    if the deadline is tight and R2 may still require API or behavioral changes before final
+    submission; however, if the API and contract are settled before tagging, v1.0.0 is
+    acceptable per constitution 9.2 (never retag—increment patch if needed).
+ ●​ Q7 (Float comparison rule — §7 rule without reproducing R's partial sort): Agree
+    with the recommendation. Replicating R's internal partial-sort order adds coupling for a
+    ~4.7 × 10^-16 difference; using the §7 rule with a tolerance test (1e-14 * mean(|kept|)) and
+    exact checks on integer/untrimmed/asymmetric cases is clean and verifiable.
+7. Scope cuts (in order if the deadline is at risk)
+ 1.​ Optional bootstrap study (S8): Already deferred in spec.md §10 and spike §5; cut
+     completely if time is tight.
+ 2.​ Cross-platform binary matrix beyond what is needed for acceptance/rubric (NFR-5
+     / AC-12): Keep the required macOS .app / binary and Windows .exe build
+     instructions/scripts working, and drop extra architecture targets or polish extras if
+     needed.
+ 3.​ Extra non-essential sample datasets or extensive benchmark permutations (NFR-2 /
+     FR-8): Keep the minimum required samples (>= 100 ints and >= 100 floats plus R
+     reference cases) and core n = 100, 10000, 1000000 benchmarks needed to pass AC-2,
+     AC-3, and NFR-2.
+ 4.​ Extensive prose/formatting polish in READMEs beyond required headings and
+     generated data blocks (AC-13, AC-14): Ensure every required section, generated
+     table/number, and get/use/build/run/test instruction is present and accurate, keeping
+     prose concise rather than elaborate.
+Verdict
+Approve with changes — the core design, spike evidence, and traceability structure are solid,
+provided the high-severity gaps and contradictions above (explicit get/use/output/sample-size
+requirements, ±Inf vs. ErrNotFinite consistency, docs/ai-dialogs/README.md, and clean
+release/module verification) are resolved in the spec and checked by tests before the 11:59 PM
+ET deadline.
+
