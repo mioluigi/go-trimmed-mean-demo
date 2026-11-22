@@ -1,0 +1,77 @@
+# Spike 001: environment, R's trimmed mean, and publishing a module
+
+| Field | Value |
+|---|---|
+| Date | 2026-11-22 |
+| Phase | 1 (spike), started during phase 0 under the same-day deadline |
+| Parts | **Workspace part** (Claude, done) · **Mac part** (`scripts/env-probe.sh`, `scripts/capture-r.sh`; results in `docs/spikes/env-mac.txt` and `testdata/r-reference/`) |
+
+## 1. Environment probe, workspace part (SFEDD §5.7)
+
+| Check | Result | Consequence |
+|---|---|---|
+| Go | go1.24.7 linux/amd64 | Workspace builds and tests; `go.mod` says `go 1.24` |
+| R | **absent** | R reference values come from the Mac as saved files (L-W8-12c) |
+| GitHub read (`git clone`) | ok | Can read last week's repository and our own |
+| GitHub push | pending: repositories not created yet | Phase 0 gate |
+| `proxy.golang.org`, `sum.golang.org` | **refused (HTTP 403)** | The workspace cannot `go get` the published package; the program's `go.sum` is generated on the Mac (L-W7-06) |
+| tutorialspoint (shell) | refused (HTTP 403); read through the web-fetch tool instead | See §2 |
+
+The Mac part (last probed 2026-11-14: Go 1.27.2, R 4.4.2, git, **no `gh`**) is refreshed by
+`scripts/env-probe.sh`.
+
+## 2. The tutorialspoint instructions (S1)
+
+Source (given by Luis): <https://www.tutorialspoint.com/article/how-to-create-your-own-package-in-golang>,
+"How to Create Your Own Package in Golang?", by Siva Sai, updated 2023-05-05. Read 2026-11-22 through the
+web-fetch tool (the shell cannot reach the site). Its seven steps, and what we do with each:
+
+| # | Tutorial step | We | Reason |
+|---|---|---|---|
+| 1 | `mkdir $GOPATH/src/mathutils` | **Depart**: the package lives at the root of its own repository | GOPATH layout is legacy; with modules (default since Go 1.16) code may live anywhere |
+| 2 | Source files named after the package, e.g. `average.go` with `package mathutils` and an exported function | **Follow**: `trimmedmean.go`, `package trimmedmean`, exported functions | — |
+| 3 | `go mod init mathutils` | **Adapt**: `go mod init github.com/mioluigi/trimmedmean` | A bare module path cannot be fetched by the `go get` of step 7; the path must be the repository address |
+| 4 | `package` keyword at the top of each file | **Follow** | — |
+| 5 | `go build` (said to produce an executable) | **Follow, corrected**: `go build ./...` checks the library compiles; the executable comes from the program repository | A non-`main` package does not produce an executable |
+| 6 | `_test.go` files, `Test…` functions, `go test` | **Follow**, plus `Example…` and `Benchmark…` functions | Rubric [T]; runnable examples document the API |
+| 7 | Publish on GitHub; consumers run `go get github.com/your-username/your-package` | **Follow, completed**: push, then a semantic-version tag (e.g. `v1.0.0`); `go get github.com/mioluigi/trimmedmean@v1.0.0` | The tutorial does not mention tags; a tag gives `go get` an exact, verifiable version |
+
+The tutorial does not explain that capitalisation exports a name, does not show importing the package from
+another program, and does not mention `go install`. The package README covers all three, because S7 asks
+for complete instructions for getting and using the package.
+
+## 3. R's trimmed mean: what we expect, and the conditions (to be checked on the Mac)
+
+From R's `mean.default` (to be confirmed by running it, constitution 1.2 and 9.3):
+
+| # | Prediction | Condition it assumes | Checked by |
+|---|---|---|---|
+| P1 | R drops `floor(n * trim)` observations from **each** end, computed in float64, so `n = 100, trim = 0.29` drops **28**, not 29 (Go's float64 gives `100 * 0.29 = 28.999999999999996`, measured in the workspace) | R 4.4.2 `mean.default` | `semantics.tsv` rows `floor(...)`; `dropped_low` column |
+| P2 | `trim >= 0.5` returns the **median**; a **negative** trim is silently ignored (no trimming); `NA` in the data gives `NA`; empty data gives `NaN`; a trim of length 2 is an error | same | `semantics.tsv` |
+| P3 | **Integers agree exactly.** For integer samples the kept values sum exactly in float64, so the order of summation cannot matter | values well below 2^53 | `trimmed-means.tsv`, integer rows: Go value identical to R value |
+| P4 | **Doubles may not agree to the last bit**, which is the riskiest assumption. R takes the kept values from a **partial sort** (`sort.int(x, partial = c(lo, hi))[lo:hi]`), so it adds them in an order that is not fully sorted; a Go implementation that sorts fully adds them in another order, and a floating-point sum depends on order. R's second pass (adding the mean deviation) should shrink any difference to a few units in the last place | arm64 Mac, where R's long double is 64 bits (`sizeof long double` in `r-session.txt`); Go uses R's two-pass mean | column `identical_to_full_sort` (R's built-in against R's own mean of the fully sorted kept values) |
+| P5 | Integer and double input give the same R result for the same values | same | column `identical_as_double` |
+| P6 | `mean(c(1e308, 1e308))` is `Inf` on the Mac (64-bit long double overflows) but would be `1e308` on an x86 machine with 80-bit long double: a platform difference, and a documented limit | arm64 | `semantics.tsv` |
+
+**Decision rule for the spec, fixed now (before seeing the results).** If every double row has
+`identical_to_full_sort = TRUE`, the comparison rule is **exact agreement** for all samples. If any row is
+`FALSE`, the rule is exact for integers and, for doubles, agreement within a tolerance **measured** from those
+rows (the largest relative difference found, times a safety factor stated in the spec), unless the spec
+chooses to reproduce R's partial sort (open decision for the spec).
+
+## 4. Publishing a module (S1, S5)
+
+| # | Prediction | Condition | Checked by |
+|---|---|---|---|
+| P7 | After `git tag v… && git push --tags` on the Mac, `go get github.com/mioluigi/trimmedmean@v…` works from a fresh module on the Mac within a minute | public repository; default `GOPROXY`, `GOSUMDB`; no `GOPRIVATE` match | Build phase, task "release"; acceptance |
+| P8 | The Mac already fetches `mioluigi` modules through the public proxy | as P7 | `env-mac.txt`: `go list -m github.com/mioluigi/go-applied-statistics@latest` |
+
+## 5. Pre-mortem: "It is after midnight and this project failed. Why?"
+
+| # | Cause | Guard |
+|---|---|---|
+| 1 | **Ran out of time**: two repositories and two reviews in about six hours | Optional S8 (bootstrap) deferred until the required work is done; a phase clock in the task list; a **minimum submittable state by 22:30** (both repositories public, the program runs, both READMEs complete) before R2 |
+| 2 | **The program repository cannot fetch the package**: wrong module path, tag not pushed, `go.sum` from the wrong machine, a leftover `replace` | Module path equals the repository address; the release is a task with its own check; `go.sum` from the Mac; acceptance runs `go build` on a **fresh clone with an empty module cache** and `-mod=readonly` |
+| 3 | **Go and R disagree, and we can't say why** (P1, P4) | Spike evidence decides the comparison rule before any code; a comparison program reports exact or ulp differences per row |
+| 4 | **Grader friction**: missing "get and use" instructions, no README in one repository, the departure from tutorialspoint unexplained, no `.exe` or `.app` instructions | Traceability to S1–S9 and the rubric; acceptance checks the README sections exist; R2 asks for grader friction |
+| 5 | **Bad input panics or gives a silent wrong answer** (empty file, NaN, missing header, a proportion out of range, too many proportions) | Limits and Consequences section; each item is an acceptance criterion tested on the **built binary** |

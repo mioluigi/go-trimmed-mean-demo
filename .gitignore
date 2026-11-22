@@ -1,0 +1,10 @@
+.DS_Store
+*.test
+*.prof
+!results/*.prof
+/bin/
+/dist/
+go.work
+go.work.sum
+.Rhistory
+.RData
