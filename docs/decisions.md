@@ -5,6 +5,8 @@ were taken under the deadline with Claude's recommendation, for Luis to overturn
 
 ## 2026-11-22
 
+- **Spec, plan and tasks v2 APPROVED by Luis at 18:55 ET, Q1–Q7 as recommended.** The `pre-approval` branch of
+  `trimmedmean` (T01–T04 + R1 tests) is merged into `main`.
 - **Review R1 triaged** (`docs/reviews/001-spec-review.md`): 11 accepted or adjusted, 1 rejected after a test
   (4.1), 2 inaccurate reviewer statements recorded. Spec, plan and tasks → v2.
 - **Correction of our own spec (v1 FR-5):** the claim that float64 rounding of `n × p` could reach `n/2` for

@@ -1,6 +1,6 @@
 # Tasks 001
 
-Status: **v2** (2026-11-22, after R1); T01–T04 done on branch `pre-approval`. One task = one commit (`T07: …`). 🔴 = failing test first. Tag: **C** Claude
+Status: **v2 — APPROVED** by Luis, 2026-11-22 18:55 ET; T01–T04 done on branch `pre-approval`. One task = one commit (`T07: …`). 🔴 = failing test first. Tag: **C** Claude
 (workspace) · **M** Mac (Luis).
 
 | ID | Tag | Task | Verify | Repo |

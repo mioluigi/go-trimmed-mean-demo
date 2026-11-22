@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| Status | **v2** (2026-11-22, 18:50) after review R1 (`docs/reviews/001-spec-review.md`), for approval |
+| Status | **v2 — APPROVED** by Luis, 2026-11-22 18:55 ET (Q1–Q7 as recommended) |
 | Repositories | `github.com/mioluigi/trimmedmean` (package) · `github.com/mioluigi/go-trimmed-mean-demo` (program, documents) |
 | Governs by | `docs/constitution.md`; traced to `docs/assignment-and-rubric.md` (S1–S9, [C][T][D][Doc][A]) |
 | Evidence | `docs/spikes/001-environment-and-r-reference.md`; R reference in `testdata/r-reference/` (Mac part of the spike) |

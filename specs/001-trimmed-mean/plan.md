@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| Status | **v2** (2026-11-22, after R1), for approval. Package tasks T01–T04 were built on branch `pre-approval` during R1 (deadline mode, logged) |
+| Status | **v2 — APPROVED** by Luis, 2026-11-22 18:55 ET (Q1–Q7 as recommended) |
 | Spec | `specs/001-trimmed-mean/spec.md` |
 
 Every design choice has its reason next to it, so Luis can defend it.
