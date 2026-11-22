@@ -31,7 +31,8 @@ trimmedmean/
 | **Validate before sorting** | Bad input costs no work, and the checks read as one list at the top of `Mean`. |
 | **`dropCounts(n, low, high)` uses `math.Floor(float64(n) * p)`** | The same float64 product R computes, so the counts agree with R, including `100 × 0.29 → 28` (spike P1). |
 | **R's two-pass mean** (`mean := sum/n; mean += Σ(x − mean)/n`), reused in spirit from Week 8 `stats.Mean` | It is R's own algorithm; on an arm64 Mac R's long double is 64 bits, so the same steps give the same bits (spike P4 decides how far that holds). |
-| **Integers through the same path** | Spike P5 checks that R gives identical results for integer and double input; if it does not, the integer path gets its own single-pass sum (decided before T02). |
+| **Integers get R's one-pass mean; floats R's two-pass mean with its overflow fallback** | Spike addendum B: R treats them differently (P5 failed, 12 of 24 rows), and the one-pass rule reproduces all 42 integer rows. The kind is known from `T` (`T(1)/T(2) == 0` only for integers), so no flag is needed. |
+| **No sort when nothing is trimmed** | R doesn't sort then either, so untrimmed results match R exactly; it also saves the `O(n log n)` work. |
 | **Guard `dropLow + dropHigh < n` even though `p < 0.5` implies it** | For very large `n` the product can round up to `n/2` (spec FR-5). |
 
 Functions (each one task): `Mean` (validate → convert → sort → slice → average), `validateProportions`,

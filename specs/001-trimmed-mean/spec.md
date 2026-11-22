@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| Status | **DRAFT v1** (2026-11-22) for review R1 |
+| Status | **DRAFT v1.1** (2026-11-22, 18:10) for review R1: v1 + the Mac spike results (spike 001 addendum B) |
 | Repositories | `github.com/mioluigi/trimmedmean` (package) · `github.com/mioluigi/go-trimmed-mean-demo` (program, documents) |
 | Governs by | `docs/constitution.md`; traced to `docs/assignment-and-rubric.md` (S1–S9, [C][T][D][Doc][A]) |
 | Evidence | `docs/spikes/001-environment-and-r-reference.md`; R reference in `testdata/r-reference/` (Mac part of the spike) |
@@ -28,8 +28,11 @@ trimmed mean is undefined or misleading instead of returning a quiet wrong numbe
   and upper ends.
 - **Counts.** For `n` observations: `dropLow = floor(n × low)`, `dropHigh = floor(n × high)`, computed in
   float64 exactly as R computes `floor(n * trim)`, so that `n = 100, trim = 0.29` drops 28 (spike P1).
-- **Trimmed mean.** The arithmetic mean of `sorted[dropLow : n − dropHigh]`, computed with R's two-pass mean
-  (the first estimate plus the mean of the deviations from it).
+- **Trimmed mean.** The arithmetic mean of `sorted[dropLow : n − dropHigh]`, computed **as R computes it**
+  (spike addendum B): for **integer** types, one sum (exact below 2^53) divided by the count; for **float**
+  types, R's two-pass mean (the first estimate plus the mean of the deviations from it), and, if the first
+  sum overflows, R's fallback of adding each value divided by the count. When nothing is trimmed, the values
+  are averaged in their given order, without sorting, as R does.
 - **Symmetric** when only one proportion is given: `low = high = trim`. With `low = high`, this is R's
   `mean(x, trim)`. **Asymmetric** when two are given; R has no built-in, so this is **our** definition,
   evaluated in R the same way for cross-checking (spike §3).
@@ -41,7 +44,7 @@ trimmed mean is undefined or misleading instead of returning a quiet wrong numbe
 | FR-1 | `func Mean[T Number](values []T, proportions ...float64) (float64, error)`, where `Number` is every Go integer and floating-point type (including named types based on them). | S1, S2 |
 | FR-2 | No proportion → the ordinary (untrimmed) mean; one → symmetric; two → `low`, `high`; more than two → `ErrProportionCount`. | S3, S4 |
 | FR-3 | `values` is never modified; the function sorts a copy. | S2 |
-| FR-4 | Errors are sentinel values usable with `errors.Is`: `ErrEmpty` (no values), `ErrNaN` (a NaN value), `ErrProportion` (a proportion that is NaN, negative, or not below 0.5), `ErrProportionCount`, `ErrNotFinite` (the result is NaN or infinite, e.g. `+Inf` and `−Inf` both kept, or the sum overflows). Each error message names the offending value. | S2 |
+| FR-4 | Errors are sentinel values usable with `errors.Is`: `ErrEmpty` (no values), `ErrNaN` (a NaN value), `ErrProportion` (a proportion that is NaN, negative, or not below 0.5), `ErrProportionCount`, `ErrNotFinite` (the result is NaN or infinite even after R's overflow fallback, e.g. `+Inf` and `−Inf` both kept). Each error message names the offending value. | S2 |
 | FR-5 | Because each proportion is below 0.5, `dropLow + dropHigh < n`: at least one observation is always kept (tested at `n = 1, 2, 3`). The code still checks it and returns `ErrProportion`, because for very large `n` the float64 product `n × p` can round up to exactly `n/2`. | S2, S3 |
 | FR-6 | The package prints nothing, logs nothing, never panics on any input, never calls `os.Exit`, holds no state, and is safe for concurrent use. | — |
 
@@ -78,11 +81,15 @@ trimmed mean is undefined or misleading instead of returning a quiet wrong numbe
 
 ## 7. Comparison rule with R (fixed before measuring; constitution 1.1)
 
-- **Integers:** exact agreement (identical float64) on every row.
-- **Floats:** decided by spike 001 P4 **before** the build, by the rule written in the spike: if R's built-in
-  equals R's own mean of the fully sorted kept values on every row, **exact agreement**; otherwise exact
-  agreement with R's full-sort value **and** agreement with R's built-in within a tolerance measured from those
-  rows (largest relative difference × 10, stated in the spec v2).
+Settled by spike 001 addendum B (R 4.4.2, aarch64-apple-darwin, 8-byte long double):
+
+- **Exact agreement** (identical float64) for: every **integer** row; every **untrimmed** row; every
+  **asymmetric** row (R evaluates our definition with a full sort, as Go does).
+- **Trimmed symmetric float rows:** exact agreement with **R's mean of the fully sorted kept values**, **and**
+  `|Go − R built-in| ≤ 10⁻¹⁴ × mean(|kept values|)`. Reason: R's built-in adds the kept values in the order its
+  partial sort leaves them; the measured worst gap is 4.7 × 10⁻¹⁶ on that scale, so the limit is 20 times it.
+- Go must read the samples as the same doubles R read: Go's parse of each sample equals R's saved
+  `*-as-read-by-r.txt` value (a test).
 - The comparison reports, per row: Go value, R value, difference in units in the last place (ULPs), and
   PASS/FAIL. A single FAIL makes the run exit 1.
 
@@ -108,9 +115,10 @@ trimmed mean is undefined or misleading instead of returning a quiet wrong numbe
 | trim ≥ 0.5 | returns the median | `ErrProportion` | a mean function that silently returns a median surprises callers |
 | NA / NaN in data | `NA` | `ErrNaN` | an error says where; `NA` propagates silently |
 | empty data | `NaN` | `ErrEmpty` | same |
+| very large values whose sum overflows | R's fallback, a finite mean | same fallback, same result | no needless error |
 | ±Inf kept, result NaN | `NaN` | `ErrNotFinite` | no silent NaN |
 
-(All R behaviours in this table are confirmed from `testdata/r-reference/semantics.tsv` before spec v2.)
+(Every R behaviour in this table is confirmed by `testdata/r-reference/semantics.tsv`, spike addendum B.)
 
 ### 8.3 Failure behaviour
 
@@ -138,6 +146,7 @@ trimmed mean is undefined or misleading instead of returning a quiet wrong numbe
 |---|---|---|
 | AC-1 | Hand-computed cases: `Mean([]int{1,2,3,4,100}, 0.2) == 3`; asymmetric `Mean([]float64{1,2,3,4,5,6,7,8,9,10}, 0.1, 0.2) == 5` (keeps 2…8); no proportion equals the plain mean | package unit test |
 | AC-2 | `floor` rule: n = 100, trim 0.29 drops 28 from each end | package unit test |
+| AC-2a | Integer path is R's one-pass mean (a case where one-pass and two-pass differ); float path has R's overflow fallback (`[1e308, 1e308]` gives 1e308) | package unit test |
 | AC-3 | Every R reference row (symmetric built-in and asymmetric defined) agrees under §7 | package test over `testdata/` copy · program comparison mode |
 | AC-4 | Every error in FR-4 is returned for its case, matched with `errors.Is`; no input panics (a fuzz test runs for 30 s) | package unit + fuzz test |
 | AC-5 | The input slice is unchanged after the call | package unit test |
@@ -183,4 +192,4 @@ trimmed mean is undefined or misleading instead of returning a quiet wrong numbe
 | Q4 | trim ≥ 0.5 | **Reject (`ErrProportion`)** with a message that names R's median behaviour. Alternative: return the median as R does. |
 | Q5 | Asymmetric flag syntax | **`-trim "low,high"`**, one flag mirroring the function. Alternative: `-low` and `-high`. |
 | Q6 | First release version | **`v1.0.0`**, tagged once the package passes its acceptance (before R2); a fix found by R2 becomes `v1.0.1`. A firm's published offering signals a stable API. Alternative: `v0.1.0`. |
-| Q7 | Float comparison rule | **As §7**, settled by spike evidence; reproducing R's partial sort is **not** recommended: it would tie the package's arithmetic to R's internals for at most a few ULPs. |
+| Q7 | Float comparison rule | **As §7**, settled by spike evidence; reproducing R's partial sort is **not** recommended: it would tie the package's arithmetic to R's internals for a gap of about two machine epsilons. |
