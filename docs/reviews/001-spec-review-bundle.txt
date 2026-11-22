@@ -1,0 +1,537 @@
+REVIEW BUNDLE: 5 files, from commit bddebe3
+  - docs/assignment-and-rubric.md
+  - docs/constitution.md
+  - docs/spikes/001-environment-and-r-reference.md
+  - testdata/r-reference/semantics.tsv
+  - specs/001-trimmed-mean/spec.md
+
+===== FILE: docs/assignment-and-rubric.md =====
+# Assignment Requirements and Rubric (summary)
+
+> Summary of the Week 9 assignment, *Create a Go Package* (100 points, due **2026-11-22, 11:59 PM ET**,
+> confirmed by Luis from Canvas at 17:27 ET; assignment page revised March 13, 2025), in our own words, so
+> every tool and reviewer can check the spec against it. The Canvas page is the authoritative source.
+
+## Scenario
+
+A **Go consulting firm** wants to promote its services by publishing **open-source Go packages on GitHub**.
+Its first offering is a package that computes a **symmetric or asymmetric trimmed mean**.
+
+## Required steps (numbered for traceability)
+
+| # | Step | Source wording, condensed |
+|---|---|---|
+| S1 | Create a **Go package** for the trimmed mean in **its own GitHub repository**, following the tutorialspoint instructions | "Follow these instructions for creating a Go package" (<https://www.tutorialspoint.com/article/how-to-create-your-own-package-in-golang>; mapping in spike 001 §2) |
+| S2 | A function that takes a **slice of integers and/or floats** and computes a trimmed mean; the trimming arguments are **proportions** taken from the lower and upper ends **after sorting** from lowest to highest | "read a slice of integers and/or floats and compute a trimmed mean" |
+| S3 | **Asymmetric trimming**: different proportions from the lower and upper ends | "different proportions of trimming are possible" |
+| S4 | With **one** trimming argument, trimming is **symmetric** | "If only one degree-of-trimming argument is provided, assume … symmetric" |
+| S5 | A **second GitHub repository** whose **`main.go` imports the package** and uses it to compute a trimmed mean | "Develop a main.go program that imports the trimmed mean package" |
+| S6 | Using samples of **at least 100 integers and 100 floats**, test the Go function against R's **`mean(x, trim = 0.05)`** (symmetric, 0.05 from each end) | "test the Go trimmed mean function against symmetric trimming results from … R" |
+| S7 | The second repository's README gives **complete instructions for getting and using the package** in a Go program, and **summarises Go results against R's** | "provide complete instructions for getting and using the package … Summarize results" |
+| S8 | *(Optional)* A **bootstrap study** showing the value of the trimmed mean as a robust estimator of central tendency (course file `run-bootstrap-robust.R`) | "(Optional) Run a bootstrap study" |
+| S9 | Submit **both repository URLs** in the Canvas comments; a **README.md in each** repository with instructions for getting, using, running and testing; **GenAI Tools** section with conversation logs | deliverables |
+
+The page also suggests using the **same random number generator** across R and Go (Mersenne Twister,
+`github.com/seehuhn/mt19937`) for Monte Carlo work. It applies to S8 only.
+
+## Deliverables
+
+- Two GitHub URLs in the Canvas comments: the **package** repository and the **example program** repository.
+- A `README.md` in each: roles of programs and data, how to get, use, run and test.
+- **GenAI Tools** section and conversation logs (plain text, PDFs or links).
+
+## Rubric: five criteria, 20 points each
+
+Ratings per criterion: Outstanding 20 (all criteria) · Meets 15 (most) · Needs Improvement 10 · Partially
+Acceptable 5 · Unacceptable 0.
+
+| Tag | Criterion | What earns full marks |
+|---|---|---|
+| **[C]** | Coding rules, organization, aesthetics | Go modules, idiomatic Go; meaningful, specific names; no useless temporaries; clean blocks; small functions; simple control flow; distribute the NOT; self-documenting code with comments explaining the logic (McConnell 2004, 777–817). |
+| **[T]** | Testing and software metrics | Unit tests of critical components with synthetic data; logs and profiles where appropriate; memory and processing requirements monitored; Monte Carlo benchmark if required (here: optional, S8). |
+| **[D]** | Design and development | Clean, efficient design meeting every requirement and the use case; general-purpose, reusable modules. |
+| **[Doc]** | Documentation | Effective Git/GitHub; a README.md **for each repository** noting the roles of programs and data and how to test and use. |
+| **[A]** | Application | Instructions for creating an executable (`.exe` for Windows, `.app` for macOS); runs to completion; **validates user input** with an explanation for incorrect input; clean UX/UI. |
+
+## Who runs what
+
+| Task | Where | Why |
+|---|---|---|
+| Documents, spikes in Go, tests, package and program code, scripts, review bundles, triage | **Claude** (workspace) | Go 1.24.7; GitHub read and push once attached |
+| Creating the two repositories on github.com | **Mac** (Luis) | Only Luis can create them |
+| Environment probe, R reference capture, data generation in R | **Mac** | The workspace has no R |
+| Tagging the package release; `go get` and `go.sum` for the program | **Mac** | The workspace cannot reach `proxy.golang.org` / `sum.golang.org` (probed 2026-11-22, HTTP 403) |
+| Measurement, `.app` build, final acceptance on fresh clones | **Mac** | Official machine |
+| Gemini reviews R1 and R2; exporting AI dialogs; submission | **Luis** | Owner |
+
+===== FILE: docs/constitution.md =====
+# Project Constitution: Create a Go Package (trimmed mean)
+
+> **Purpose.** The non-negotiable rules for this project. Every spec, plan, task and line of code is checked
+> against them. A conflicting decision either changes or amends this file deliberately, with a note in
+> `docs/decisions.md`.
+>
+> **Source of authority.** The Week 9 assignment and rubric (`docs/assignment-and-rubric.md`), carried forward
+> from Week 8 (SFEDD v2.1, Articles 1–9, with the Week 8 draft lessons L-W8-01…16 in force) with changes for a
+> project whose deliverable is **a published Go module used by a second repository** and whose reference is
+> **R's `mean(x, trim)`**. Tags: **[C]** Coding · **[T]** Testing & metrics · **[D]** Design · **[Doc]**
+> Documentation · **[A]** Application. *New or changed this week* is marked **(W9)**.
+>
+> This file lives in the program repository (`go-trimmed-mean-demo`) and governs both repositories.
+
+---
+
+## Article 1: Correctness first
+
+1.1 **(W9)** The package's symmetric trimmed mean is trusted only when it **agrees with R's
+`mean(x, trim)` on the same bytes**, by a rule written in the spec before measuring. R's computation is
+deterministic, so the target is **exact agreement** (identical float64), with the conditions it assumes
+(platform, R version, integer or double input) stated. A tolerance is a fallback only, and only one measured
+in a spike (L-W8-04). A program makes the comparison. **[T]**
+1.2 **(W9)** R's definition is learned **by running R**: how many observations are trimmed
+(`floor(n * trim)`, including its floating-point behaviour), what happens at `trim >= 0.5`, negative trim,
+missing values and empty input. Where the package deliberately differs from R (for example rejecting a
+negative proportion that R silently ignores), the difference is a requirement, tested, and stated in the
+README. **[T][Doc]**
+1.3 Asymmetric trimming has no R built-in. Its definition is written in the spec, tested on hand-computed
+cases, and cross-checked against the same definition evaluated in R; the README says it is our definition. **[T]**
+1.4 Every number in the README (tables and headline) is generated by script from saved results; prose that
+cites them is re-checked whenever results change. **[Doc]**
+1.5 Statistical code is tested against **answers known independently of the code**: hand-computed small
+cases, closed-form values, and R's saved output. **[T]**
+
+## Article 2: Idiomatic, readable Go (McConnell 2004, ch. 32) **[C]**
+
+2.1 Go modules; `gofmt` and `go vet` clean.
+2.2 Meaningful, specific names; not abstract, not overly long.
+2.3 No useless temporary variables or intermediate results.
+2.4 Functions do one thing; large blocks become small, named functions.
+2.5 Plain `if/else` and `for`; distribute the NOT in complex Boolean expressions.
+2.6 Every exported identifier has a doc comment; comments explain *why*.
+2.7 Errors are returned and handled; **no `panic`** for bad input (empty data, NaN, out-of-range
+proportions, too many proportions).
+2.8 **(W9)** The package **never changes the caller's slice** (it sorts a copy), and is safe for
+concurrent use because it holds no state.
+
+## Article 3: Test-first, measured **[T]**
+
+3.1 Failing test before implementation of every critical component; **mutation check** important tests with
+`go test -count=1`; a mutation that only breaks compilation does not count (L-W6-14, L-W8-03).
+3.2 Standard `testing`; table-driven; tests need neither the internet nor R: R's results enter the Go tests
+as **saved files with provenance**.
+3.3 Benchmarks with `testing.B` and allocation reporting (`-benchmem`) for the package; a CPU and memory
+profile of the program on the largest committed sample; the program logs what it did (structured, to
+standard error).
+3.4 **(W9)** Runnable **`Example` functions** document the package API and are checked by `go test`.
+3.5 Guards, scripts and acceptance checks are themselves tested on a passing and a failing case; exit codes
+are tested on the **built binary**, never through `go run`.
+
+## Article 4: Clean, reusable design **[D]**
+
+4.1 **(W9)** The trimmed mean is a **stand-alone, importable module** (`github.com/mioluigi/trimmedmean`)
+with **no dependencies outside the standard library**, no printing, no logging and no `os.Exit`. One generic
+API serves integers and floats.
+4.2 **(W9)** The package is **versioned**: released by a semantic-version Git tag, so that `go get` fetches an
+exact, verifiable version. A released tag is never moved.
+4.3 The program repository is a thin layer: read data, validate input, call the package, report.
+4.4 Pin every dependency version (`go.mod`, `go.sum`); `go.sum` is generated on Luis's Mac. **Never commit
+`go.work` or a `replace` line** pointing at a local copy (L-W7-06). The R version is recorded with the results.
+
+## Article 5: Documentation and Git hygiene **[Doc]**
+
+5.1 **(W9)** **Each repository has a complete `README.md`.** The package's: what it computes, its exact
+definition, install (`go get`), use (import and call), errors, limits, tests, licence. The program's: roles of
+programs and data, getting and using the package, building, running, testing, the Go-versus-R results,
+limits, GenAI Tools.
+5.2 One task per commit, message starts with the task ID; specs, plan, tasks, reviews, decisions in the
+program repository.
+5.3 README **GenAI Tools** section (Claude Pro with Claude Code as builder; Gemini Ultra as reviewer); AI
+dialogs in `docs/ai-dialogs/` with a `README.md` index.
+5.4 `scripts/acceptance.sh` is committed and passes on **fresh clones of both repositories** before
+submission, including a real `go get` of the released tag. Checks that need R say so and are skipped with a
+clear message where R is absent, never silently.
+
+## Article 6: A finished, friendly application **[A]**
+
+6.1 The README gives **instructions for creating** a macOS binary, a Windows `.exe` and a macOS `.app`, and
+the scripts that do it.
+6.2 The program **runs to completion with no arguments** on the committed samples.
+6.3 User input (data file, trimming proportions) is validated; bad input yields a clear message and a
+non-zero exit code.
+6.4 A finished run tells the user, in plain words, what was computed, from which data, and how it compares
+with R's saved result where one exists. Logs go to standard error.
+
+## Article 7: How we work with AI tools
+
+7.1 Claude Code is the only tool that writes files in these repositories during a task.
+7.2 Gemini (web) reviews the spec and the finished repositories; it lists the files it **received** first,
+then must cite file and section for every claim.
+7.3 Luis approves spec, plan and tasks, and reads every diff before it is committed.
+7.4 If implementation shows the spec is wrong, update the spec first.
+7.5 Every review finding gets a recorded decision with a reason; testable claims are tested first.
+7.6 Spike before planning; predictions state their conditions and are checked and corrected in writing.
+7.7 Claude verifies every hand-off and push landed before building on it; after a scripted edit, it checks
+the change is in the file before committing (L-W8-11).
+
+## Article 8: Data and privacy
+
+8.1 Inputs and fixtures pass the data gate (`scripts/check-inputs.sh`) before their first commit.
+8.2 No personal data in committed files: no e-mail address, user name, host name or home-directory path in
+saved results or machine descriptions. (Commit metadata follows Luis's usual Git identity.)
+8.3 Samples are **generated by a committed, seeded R script** and committed with a manifest (size, SHA-256,
+generator, seed), so R and Go provably read the same bytes. Floats are written with **4 decimals**; R computes from what it reads back, and saves those doubles at 17 digits so a Go test proves both read identical values *(amended 2026-11-22, spike 001 addendum A; was "17 significant digits")*.
+8.4 Luis decides any history rewrite; it touches only our own commits.
+
+## Article 9: Respect for external systems **(W9, adapted)**
+
+9.1 The program calls **no external system at run time**.
+9.2 **(W9)** The Go module proxy and checksum database are external systems we publish to: a version is
+published once, by tag, from Luis's Mac; nothing is retracted or retagged to hide a mistake (a mistake gets a
+new version).
+9.3 **R is the reference, not the opponent**: its behaviour is learned by running it, and differences are
+reported, not hidden.
+9.4 **(W9)** The tutorialspoint instructions are followed where they agree with current Go modules practice;
+where they rely on GOPATH, we use modules instead and say why in the README.
+
+===== FILE: docs/spikes/001-environment-and-r-reference.md =====
+# Spike 001: environment, R's trimmed mean, and publishing a module
+
+| Field | Value |
+|---|---|
+| Date | 2026-11-22 |
+| Phase | 1 (spike), started during phase 0 under the same-day deadline |
+| Parts | **Workspace part** (Claude, done) · **Mac part** (`scripts/env-probe.sh`, `scripts/capture-r.sh`; results in `docs/spikes/env-mac.txt` and `testdata/r-reference/`) |
+
+## 1. Environment probe, workspace part (SFEDD §5.7)
+
+| Check | Result | Consequence |
+|---|---|---|
+| Go | go1.24.7 linux/amd64 | Workspace builds and tests; `go.mod` says `go 1.24` |
+| R | **absent** | R reference values come from the Mac as saved files (L-W8-12c) |
+| GitHub read (`git clone`) | ok | Can read last week's repository and our own |
+| GitHub push | pending: repositories not created yet | Phase 0 gate |
+| `proxy.golang.org`, `sum.golang.org` | **refused (HTTP 403)** | The workspace cannot `go get` the published package; the program's `go.sum` is generated on the Mac (L-W7-06) |
+| tutorialspoint (shell) | refused (HTTP 403); read through the web-fetch tool instead | See §2 |
+
+The Mac part (last probed 2026-11-14: Go 1.27.2, R 4.4.2, git, **no `gh`**) is refreshed by
+`scripts/env-probe.sh`.
+
+## 2. The tutorialspoint instructions (S1)
+
+Source (given by Luis): <https://www.tutorialspoint.com/article/how-to-create-your-own-package-in-golang>,
+"How to Create Your Own Package in Golang?", by Siva Sai, updated 2023-05-05. Read 2026-11-22 through the
+web-fetch tool (the shell cannot reach the site). Its seven steps, and what we do with each:
+
+| # | Tutorial step | We | Reason |
+|---|---|---|---|
+| 1 | `mkdir $GOPATH/src/mathutils` | **Depart**: the package lives at the root of its own repository | GOPATH layout is legacy; with modules (default since Go 1.16) code may live anywhere |
+| 2 | Source files named after the package, e.g. `average.go` with `package mathutils` and an exported function | **Follow**: `trimmedmean.go`, `package trimmedmean`, exported functions | — |
+| 3 | `go mod init mathutils` | **Adapt**: `go mod init github.com/mioluigi/trimmedmean` | A bare module path cannot be fetched by the `go get` of step 7; the path must be the repository address |
+| 4 | `package` keyword at the top of each file | **Follow** | — |
+| 5 | `go build` (said to produce an executable) | **Follow, corrected**: `go build ./...` checks the library compiles; the executable comes from the program repository | A non-`main` package does not produce an executable |
+| 6 | `_test.go` files, `Test…` functions, `go test` | **Follow**, plus `Example…` and `Benchmark…` functions | Rubric [T]; runnable examples document the API |
+| 7 | Publish on GitHub; consumers run `go get github.com/your-username/your-package` | **Follow, completed**: push, then a semantic-version tag (e.g. `v1.0.0`); `go get github.com/mioluigi/trimmedmean@v1.0.0` | The tutorial does not mention tags; a tag gives `go get` an exact, verifiable version |
+
+The tutorial does not explain that capitalisation exports a name, does not show importing the package from
+another program, and does not mention `go install`. The package README covers all three, because S7 asks
+for complete instructions for getting and using the package.
+
+## 3. R's trimmed mean: what we expect, and the conditions (to be checked on the Mac)
+
+From R's `mean.default` (to be confirmed by running it, constitution 1.2 and 9.3):
+
+| # | Prediction | Condition it assumes | Checked by |
+|---|---|---|---|
+| P1 | R drops `floor(n * trim)` observations from **each** end, computed in float64, so `n = 100, trim = 0.29` drops **28**, not 29 (Go's float64 gives `100 * 0.29 = 28.999999999999996`, measured in the workspace) | R 4.4.2 `mean.default` | `semantics.tsv` rows `floor(...)`; `dropped_low` column |
+| P2 | `trim >= 0.5` returns the **median**; a **negative** trim is silently ignored (no trimming); `NA` in the data gives `NA`; empty data gives `NaN`; a trim of length 2 is an error | same | `semantics.tsv` |
+| P3 | **Integers agree exactly.** For integer samples the kept values sum exactly in float64, so the order of summation cannot matter | values well below 2^53 | `trimmed-means.tsv`, integer rows: Go value identical to R value |
+| P4 | **Doubles may not agree to the last bit**, which is the riskiest assumption. R takes the kept values from a **partial sort** (`sort.int(x, partial = c(lo, hi))[lo:hi]`), so it adds them in an order that is not fully sorted; a Go implementation that sorts fully adds them in another order, and a floating-point sum depends on order. R's second pass (adding the mean deviation) should shrink any difference to a few units in the last place | arm64 Mac, where R's long double is 64 bits (`sizeof long double` in `r-session.txt`); Go uses R's two-pass mean | column `identical_to_full_sort` (R's built-in against R's own mean of the fully sorted kept values) |
+| P5 | Integer and double input give the same R result for the same values | same | column `identical_as_double` |
+| P6 | `mean(c(1e308, 1e308))` is `Inf` on the Mac (64-bit long double overflows) but would be `1e308` on an x86 machine with 80-bit long double: a platform difference, and a documented limit | arm64 | `semantics.tsv` |
+
+**Decision rule for the spec, fixed now (before seeing the results).** If every double row has
+`identical_to_full_sort = TRUE`, the comparison rule is **exact agreement** for all samples. If any row is
+`FALSE`, the rule is exact for integers and, for doubles, agreement within a tolerance **measured** from those
+rows (the largest relative difference found, times a safety factor stated in the spec), unless the spec
+chooses to reproduce R's partial sort (open decision for the spec).
+
+## 4. Publishing a module (S1, S5)
+
+| # | Prediction | Condition | Checked by |
+|---|---|---|---|
+| P7 | After `git tag v… && git push --tags` on the Mac, `go get github.com/mioluigi/trimmedmean@v…` works from a fresh module on the Mac within a minute | public repository; default `GOPROXY`, `GOSUMDB`; no `GOPRIVATE` match | Build phase, task "release"; acceptance |
+| P8 | The Mac already fetches `mioluigi` modules through the public proxy | as P7 | `env-mac.txt`: `go list -m github.com/mioluigi/go-applied-statistics@latest` |
+
+## Addendum A (2026-11-22 17:55): the first R capture stopped
+
+- **What happened.** `capture-r.sh` stopped at `stopifnot(identical(values_read, values))`: a sample written
+  with `%.17g` and read back by `as.numeric` was not identical to the values R generated. Nothing was committed.
+- **Hypothesis, not yet shown.** R reads numbers with its own parser (`R_strtod`), which accumulates digits in
+  a long double. The Mac probe shows `sizeof long double: 8`, so on this arm64 Mac the accumulation is plain
+  double and a 17-digit string can come back one unit in the last place away. `testdata/r-reference/parse-check.tsv`
+  counts, per float sample, the values whose 17-digit round trip fails, as evidence.
+- **Change.** Floats are written with 4 decimals, as in Week 8; R computes from what it **read**; and R saves
+  those doubles at 17 digits (`sprintf` is exact) in `testdata/r-reference/*-as-read-by-r.txt`, so a Go test
+  proves Go's `strconv.ParseFloat` reads the same doubles from the sample files. Constitution 8.3 amended.
+- **Lesson candidate.** A round-trip check that compares with the generator's memory tests the generator,
+  not the shared file; compare what each side reads.
+
+## Addendum B (2026-11-22 18:05): the Mac results, prediction by prediction
+
+Evidence: commit `835c248` (`docs/spikes/env-mac.txt`, `testdata/r-reference/`), analysed in the workspace
+with Python (correctly rounded parsing, like Go's `strconv`).
+
+| # | Prediction | Outcome | Evidence |
+|---|---|---|---|
+| A | (addendum A) R's parser fails some 17-digit round trips on this Mac | **Held**: 28 of 100, 23 of 101, 268 of 1,000 values. With 4 decimals, R reads every value exactly as a correctly rounded parser does (0 differences of 1,201) | `parse-check.tsv`; `*-as-read-by-r.txt` |
+| P1 | `floor(n * trim)` in float64; `100 × 0.29` drops 28 | **Held** (28, 7, 5, 5) | `semantics.tsv`; `dropped_low` |
+| P2 | trim ≥ 0.5 → median; negative ignored; NA → NA; empty → NaN; length-2 trim → error | **Held**: `trim = -0.1` gives 22 (the untrimmed mean); 0.5 and 0.7 give the median 3; NA and NaN give NA; empty gives NaN; `c(0.1, 0.2)` and `NA` give "'trim' must be numeric of length one" | `semantics.tsv` |
+| P3 | Integers: order cannot matter | **Held**: 24 of 24 integer rows identical to the full-sort mean | `identical_to_full_sort` |
+| P4 | Doubles: R's partial sort changes the last bits | **Held**: 20 of 24 double rows differ from R's own full-sort mean, by up to 303 ULPs (the mean is near zero, so ULPs are small); **scaled by the mean absolute kept value, the worst gap is 4.7 × 10⁻¹⁶**, about two machine epsilons | `trimmed-means.tsv`; analysis above |
+| P5 | Integer and double input give the same R result | **Failed**: 12 of 24 integer rows differ from the same values as doubles. R averages integers with **one exact sum divided by n**, doubles with its two-pass method. The one-pass rule reproduces all 42 integer rows exactly | `identical_as_double`; single-pass check |
+| P6 | `mean(c(1e308, 1e308))` overflows to Inf on this Mac | **Failed**: R returns the value (`1.0000000000000006e+308`, which is how R's parser reads `1e308`). R has an **overflow fallback**: when the sum is infinite it re-adds `x/n` term by term | `semantics.tsv` |
+| P7 | Tag → `go get` from a fresh module works | pending (T07) | — |
+| P8 | The Mac fetches `mioluigi` modules through the proxy | **Held** | `env-mac.txt` |
+
+**Consequences for the spec (v1.1, before R1).** Integers use R's one-pass exact mean; doubles use R's
+two-pass mean with R's overflow fallback. Comparison rule: **exact** for integers, for untrimmed doubles (Go,
+like R, does not sort when nothing is trimmed) and for every asymmetric row (both sides sort fully); trimmed
+symmetric doubles must equal **R's full-sort mean exactly** and R's built-in within **10⁻¹⁴ × the mean absolute
+kept value** (20 times the measured worst gap). Reproducing R's partial sort is not worth tying the package to
+R's internals for gaps of about two epsilons (Q7).
+
+## 5. Pre-mortem: "It is after midnight and this project failed. Why?"
+
+| # | Cause | Guard |
+|---|---|---|
+| 1 | **Ran out of time**: two repositories and two reviews in about six hours | Optional S8 (bootstrap) deferred until the required work is done; a phase clock in the task list; a **minimum submittable state by 22:30** (both repositories public, the program runs, both READMEs complete) before R2 |
+| 2 | **The program repository cannot fetch the package**: wrong module path, tag not pushed, `go.sum` from the wrong machine, a leftover `replace` | Module path equals the repository address; the release is a task with its own check; `go.sum` from the Mac; acceptance runs `go build` on a **fresh clone with an empty module cache** and `-mod=readonly` |
+| 3 | **Go and R disagree, and we can't say why** (P1, P4) | Spike evidence decides the comparison rule before any code; a comparison program reports exact or ulp differences per row |
+| 4 | **Grader friction**: missing "get and use" instructions, no README in one repository, the departure from tutorialspoint unexplained, no `.exe` or `.app` instructions | Traceability to S1–S9 and the rubric; acceptance checks the README sections exist; R2 asks for grader friction |
+| 5 | **Bad input panics or gives a silent wrong answer** (empty file, NaN, missing header, a proportion out of range, too many proportions) | Limits and Consequences section; each item is an acceptance criterion tested on the **built binary** |
+
+===== FILE: testdata/r-reference/semantics.tsv =====
+expression	result
+floor(100 * 0.29)	28
+floor(100 * 0.07)	7
+floor(101 * 0.05)	5
+floor(57 * 0.1)	5
+mean(c(1, 2, 3, 4, 100), trim = -0.1)	22
+mean(c(1, 2, 3, 4, 100), trim = 0.5)	3
+mean(c(1, 2, 3, 4, 100), trim = 0.7)	3
+median(c(1, 2, 3, 4, 100))	3
+mean(c(1, 2, 3, 4, 100, 7), trim = 0.5)	3.5
+mean(c(2, 4), trim = 0.49)	3
+mean(1, trim = 0.4)	1
+mean(c(1L, 2L, 3L), trim = 0.1)	2
+mean(1:10, trim = 0.1)	5.5
+mean(c(1, NA, 3), trim = 0.1)	NA
+mean(c(1, NaN, 3), trim = 0.1)	NA
+mean(numeric(0), trim = 0.1)	NaN
+mean(numeric(0))	NaN
+mean(c(1, 2, 3), trim = c(0.1, 0.2))	ERROR: 'trim' must be numeric of length one
+mean(c(1, 2, 3), trim = NA)	ERROR: 'trim' must be numeric of length one
+mean(c(-Inf, 1:8, Inf), trim = 0.1)	4.5
+mean(c(-Inf, 1:8, Inf))	NaN
+mean(c(1e308, 1e308))	1.0000000000000006e+308
+mean(c(1e308, 1e308, 1, 1), trim = 0.25)	5.000000000000003e+307
+mean("a", trim = 0.1)	WARNING: argument is not numeric or logical: returning NA
+
+===== FILE: specs/001-trimmed-mean/spec.md =====
+# Spec 001: Trimmed mean package and demonstration program
+
+| Field | Value |
+|---|---|
+| Status | **DRAFT v1.1** (2026-11-22, 18:10) for review R1: v1 + the Mac spike results (spike 001 addendum B) |
+| Repositories | `github.com/mioluigi/trimmedmean` (package) · `github.com/mioluigi/go-trimmed-mean-demo` (program, documents) |
+| Governs by | `docs/constitution.md`; traced to `docs/assignment-and-rubric.md` (S1–S9, [C][T][D][Doc][A]) |
+| Evidence | `docs/spikes/001-environment-and-r-reference.md`; R reference in `testdata/r-reference/` (Mac part of the spike) |
+
+## 1. Problem
+
+A Go consulting firm wants a first open-source package to show its craft: a **trimmed mean**, symmetric or
+asymmetric, that any Go program can fetch with `go get` and trust. "Trust" means two things here: it agrees
+with the reference implementation analysts already use (R's `mean(x, trim)`), and it refuses inputs where a
+trimmed mean is undefined or misleading instead of returning a quiet wrong number.
+
+## 2. Users
+
+| User | Needs |
+|---|---|
+| **Go developer** (the firm's prospective client) | `go get` one module with no dependencies; one obvious function; clear errors; documentation with runnable examples |
+| **Analyst moving from R** | Same answer as `mean(x, trim)` for symmetric trimming, and a written list of where the package deliberately differs |
+| **Grader** | Two repositories, a README in each, instructions to get, use, build, run and test, and the Go-versus-R comparison |
+
+## 3. Definitions
+
+- **Proportions.** `low` and `high` are the proportions of the **sorted** observations removed from the lower
+  and upper ends.
+- **Counts.** For `n` observations: `dropLow = floor(n × low)`, `dropHigh = floor(n × high)`, computed in
+  float64 exactly as R computes `floor(n * trim)`, so that `n = 100, trim = 0.29` drops 28 (spike P1).
+- **Trimmed mean.** The arithmetic mean of `sorted[dropLow : n − dropHigh]`, computed **as R computes it**
+  (spike addendum B): for **integer** types, one sum (exact below 2^53) divided by the count; for **float**
+  types, R's two-pass mean (the first estimate plus the mean of the deviations from it), and, if the first
+  sum overflows, R's fallback of adding each value divided by the count. When nothing is trimmed, the values
+  are averaged in their given order, without sorting, as R does.
+- **Symmetric** when only one proportion is given: `low = high = trim`. With `low = high`, this is R's
+  `mean(x, trim)`. **Asymmetric** when two are given; R has no built-in, so this is **our** definition,
+  evaluated in R the same way for cross-checking (spike §3).
+
+## 4. Functional requirements — package (`trimmedmean`)
+
+| ID | Requirement | Steps |
+|---|---|---|
+| FR-1 | `func Mean[T Number](values []T, proportions ...float64) (float64, error)`, where `Number` is every Go integer and floating-point type (including named types based on them). | S1, S2 |
+| FR-2 | No proportion → the ordinary (untrimmed) mean; one → symmetric; two → `low`, `high`; more than two → `ErrProportionCount`. | S3, S4 |
+| FR-3 | `values` is never modified; the function sorts a copy. | S2 |
+| FR-4 | Errors are sentinel values usable with `errors.Is`: `ErrEmpty` (no values), `ErrNaN` (a NaN value), `ErrProportion` (a proportion that is NaN, negative, or not below 0.5), `ErrProportionCount`, `ErrNotFinite` (the result is NaN or infinite even after R's overflow fallback, e.g. `+Inf` and `−Inf` both kept). Each error message names the offending value. | S2 |
+| FR-5 | Because each proportion is below 0.5, `dropLow + dropHigh < n`: at least one observation is always kept (tested at `n = 1, 2, 3`). The code still checks it and returns `ErrProportion`, because for very large `n` the float64 product `n × p` can round up to exactly `n/2`. | S2, S3 |
+| FR-6 | The package prints nothing, logs nothing, never panics on any input, never calls `os.Exit`, holds no state, and is safe for concurrent use. | — |
+
+### Reuse requirements (the firm's offering)
+
+| ID | Requirement |
+|---|---|
+| FR-R1 | The module depends on the standard library only (`go.mod` has no `require`). |
+| FR-R2 | Released by a semantic-version tag; `go get github.com/mioluigi/trimmedmean@<tag>` works from a fresh module on the Mac. |
+| FR-R3 | Every exported identifier has a doc comment; at least three runnable `Example` functions (symmetric, asymmetric, error handling) pass under `go test`. |
+| FR-R4 | The package README alone is enough to install, call, and understand every error and limit. |
+
+## 5. Functional requirements — program (`go-trimmed-mean-demo`)
+
+| ID | Requirement | Steps |
+|---|---|---|
+| FR-7 | `main.go` imports `github.com/mioluigi/trimmedmean` at the released tag (no `replace`, no `go.work`). | S5 |
+| FR-8 | **With no arguments**, the program reads every committed sample in `data/` (integers read as `[]int`, floats as `[]float64`), computes the symmetric trimmed mean at 0.05 and every case in `testdata/r-reference/trimmed-means.tsv`, compares each with R's saved value under the rule in §7, prints a summary table, and writes `results/comparison.tsv`. | S5, S6 |
+| FR-9 | `-data FILE -trim P` computes one trimmed mean for the user's file (`-trim "0.05"` symmetric, `-trim "0.05,0.10"` asymmetric) and prints it with the counts dropped from each end. | S5 |
+| FR-10 | Input files: one number per line, optional header line `value`, blank lines ignored; the kind (integer or float) is detected from the content. | S5 |
+| FR-11 | Logs (structured, `log/slog`) go to standard error; results go to standard output. `-cpuprofile FILE` and `-memprofile FILE` write profiles. | — |
+| FR-12 | Exit codes: **0** success (and, in comparison mode, every row agrees); **1** a comparison disagrees or a run-time failure; **2** a usage or input error. | — |
+
+## 6. Non-functional requirements
+
+| ID | Requirement | Rubric |
+|---|---|---|
+| NFR-1 | `gofmt`, `go vet` clean; functions short and single-purpose; names specific (constitution Art. 2). | [C] |
+| NFR-2 | Package: table-driven unit tests with hand-computed answers; R reference tests from saved files; mutation check of the critical tests with `-count=1`; benchmarks at n = 100, 10,000, 1,000,000 with `-benchmem`. | [T] |
+| NFR-3 | Program: tests of every exit code and message on the **built binary**; a CPU and memory profile of the comparison run kept in `results/`. | [T][A] |
+| NFR-4 | Time and memory: `O(n log n)` time and one copy of the input (8 bytes × n) of extra memory, confirmed by the benchmark's allocations. | [T][D] |
+| NFR-5 | Build instructions and scripts for macOS (arm64, amd64), a Windows `.exe`, and a macOS `.app`. | [A] |
+| NFR-6 | Tests need neither R nor the internet. | [T] |
+
+## 7. Comparison rule with R (fixed before measuring; constitution 1.1)
+
+Settled by spike 001 addendum B (R 4.4.2, aarch64-apple-darwin, 8-byte long double):
+
+- **Exact agreement** (identical float64) for: every **integer** row; every **untrimmed** row; every
+  **asymmetric** row (R evaluates our definition with a full sort, as Go does).
+- **Trimmed symmetric float rows:** exact agreement with **R's mean of the fully sorted kept values**, **and**
+  `|Go − R built-in| ≤ 10⁻¹⁴ × mean(|kept values|)`. Reason: R's built-in adds the kept values in the order its
+  partial sort leaves them; the measured worst gap is 4.7 × 10⁻¹⁶ on that scale, so the limit is 20 times it.
+- Go must read the samples as the same doubles R read: Go's parse of each sample equals R's saved
+  `*-as-read-by-r.txt` value (a test).
+- The comparison reports, per row: Go value, R value, difference in units in the last place (ULPs), and
+  PASS/FAIL. A single FAIL makes the run exit 1.
+
+## 8. Limits and consequences
+
+### 8.1 Boundaries
+
+| Item | Supported | Rejected, with message and exit code |
+|---|---|---|
+| Element types | all Go integer and float types | — (compile-time) |
+| Number of values | 1 to memory limits (benchmarked to 10^6) | 0: `ErrEmpty` → program: `no numbers in FILE` · exit 2 |
+| Proportions | each in [0, 0.5); one or two of them | NaN, < 0, ≥ 0.5: `ErrProportion` → `trim proportion 0.6 is outside [0, 0.5)` · exit 2; three or more: `ErrProportionCount` · exit 2 |
+| Values | finite numbers; ±Inf allowed if the result is finite | NaN: `ErrNaN` · exit 2; NaN or infinite result: `ErrNotFinite` · exit 1 |
+| Integer magnitude | exact when every value and the sum are below 2^53 in magnitude | beyond: still computed, documented loss of precision (README limit) |
+| Input file | one number per line, optional `value` header | missing file, unreadable line (`line 7: "12abc" is not a number`) · exit 2 |
+| Flags | `-data`, `-trim`, `-cpuprofile`, `-memprofile` | unknown flag, `-trim` without `-data`, malformed `-trim` · usage text · exit 2 |
+
+### 8.2 Deliberate differences from R (README table)
+
+| Case | R | This package | Why |
+|---|---|---|---|
+| negative trim | ignored, untrimmed mean | `ErrProportion` | a negative proportion is a caller mistake, not a request |
+| trim ≥ 0.5 | returns the median | `ErrProportion` | a mean function that silently returns a median surprises callers |
+| NA / NaN in data | `NA` | `ErrNaN` | an error says where; `NA` propagates silently |
+| empty data | `NaN` | `ErrEmpty` | same |
+| very large values whose sum overflows | R's fallback, a finite mean | same fallback, same result | no needless error |
+| ±Inf kept, result NaN | `NaN` | `ErrNotFinite` | no silent NaN |
+
+(Every R behaviour in this table is confirmed by `testdata/r-reference/semantics.tsv`, spike addendum B.)
+
+### 8.3 Failure behaviour
+
+- **Bad input:** rejected before any computation, with the line number or value; nothing written.
+- **Partial failure (comparison mode):** every row is still compared and reported; the exit code says whether
+  all agreed. `results/comparison.tsv` is written to a temporary file and renamed, so an interrupted or failed
+  write never leaves a half file.
+- **Interruption (Ctrl-C), full disk:** the program has nothing to clean up beyond the temporary file; a write
+  error is reported with the path and exit 1.
+- **Timeout:** not applicable (no network, bounded work).
+
+### 8.4 Unintended consequences
+
+| For | Risk | Guard |
+|---|---|---|
+| Data | the caller's slice reordered by sorting | FR-3, tested by comparing the input before and after |
+| Data | personal data in committed samples | samples are synthetic, from a seeded script (constitution 8.3); data gate |
+| Users | a misleading number (NaN, a median presented as a mean, silent precision loss) | FR-4, §8.2, the integer limit in the README |
+| Users | believing asymmetric results are "R's" | README says asymmetric is our definition, cross-checked in R |
+| External systems | a mistaken release cached forever by the Go module proxy | a tag is pushed only after the package's acceptance passes; never moved; a fix gets a new version (constitution 9.2) |
+
+## 9. Acceptance criteria
+
+| AC | Criterion | Test |
+|---|---|---|
+| AC-1 | Hand-computed cases: `Mean([]int{1,2,3,4,100}, 0.2) == 3`; asymmetric `Mean([]float64{1,2,3,4,5,6,7,8,9,10}, 0.1, 0.2) == 5` (keeps 2…8); no proportion equals the plain mean | package unit test |
+| AC-2 | `floor` rule: n = 100, trim 0.29 drops 28 from each end | package unit test |
+| AC-2a | Integer path is R's one-pass mean (a case where one-pass and two-pass differ); float path has R's overflow fallback (`[1e308, 1e308]` gives 1e308) | package unit test |
+| AC-3 | Every R reference row (symmetric built-in and asymmetric defined) agrees under §7 | package test over `testdata/` copy · program comparison mode |
+| AC-4 | Every error in FR-4 is returned for its case, matched with `errors.Is`; no input panics (a fuzz test runs for 30 s) | package unit + fuzz test |
+| AC-5 | The input slice is unchanged after the call | package unit test |
+| AC-6 | At least one value kept for n = 1, 2, 3 and proportions up to 0.4999 | package unit test |
+| AC-7 | `go.mod` of the package has no `require`; `Example` functions pass | acceptance script |
+| AC-8 | Fresh-clone build of the program with an empty module cache and `-mod=readonly` fetches the released tag | acceptance script (Mac) |
+| AC-9 | Program with no arguments exits 0 and prints the comparison table; `results/comparison.tsv` matches | built-binary test |
+| AC-10 | Each row of §8.1 gives its message and exit code | built-binary tests |
+| AC-11 | Mutation check: at least 6 behavioural mutants (`floor`→`round`, upper index off by one, low/high swapped, single-pass mean, copy removed, validation inverted) all caught | `docs/mutation-checks.txt` |
+| AC-12 | Binaries for macOS and Windows and a macOS `.app` are built by the scripts | acceptance script |
+| AC-13 | Each README has the required sections (package: install, use, errors, limits, R differences, tests, licence; program: roles, get and use, build, run, test, results, limits, GenAI Tools) | acceptance script checks headings |
+| AC-14 | README numbers come from generated blocks; `scripts/readme.sh --check` passes | acceptance script |
+
+## 10. Traceability
+
+| Step | Requirements | ACs |
+|---|---|---|
+| S1 package in its own repository, tutorialspoint | FR-1, FR-R1, FR-R2; spike §2 mapping | AC-7 |
+| S2 ints and/or floats, proportions after sorting | FR-1, FR-3, FR-4, FR-5 | AC-1, AC-4, AC-5, AC-6 |
+| S3 asymmetric | FR-2 | AC-1, AC-3 |
+| S4 one argument → symmetric | FR-2 | AC-1 |
+| S5 second repository, `main.go` imports | FR-7 … FR-12 | AC-8, AC-9, AC-10 |
+| S6 ≥ 100 ints and floats vs R trim = 0.05 | FR-8, §7 | AC-3, AC-9 |
+| S7 README: get and use, Go vs R summary | FR-R4, §8.2 | AC-13, AC-14 |
+| S8 bootstrap (optional, deferred) | — | — |
+| S9 two URLs, README each, GenAI Tools | — | AC-13 |
+
+| Rubric | Where |
+|---|---|
+| [C] | NFR-1; Art. 2 |
+| [T] | NFR-2, NFR-3, NFR-6; AC-3, AC-4, AC-11 |
+| [D] | FR-1…6, FR-R1…R4, NFR-4 |
+| [Doc] | FR-R4; AC-13, AC-14; Art. 5 |
+| [A] | FR-9…12, NFR-5; AC-9, AC-10, AC-12 |
+
+## 11. Open decisions (recommendation first)
+
+| Q | Decision | Recommendation and reason |
+|---|---|---|
+| Q1 | API shape | **One variadic `Mean(values, proportions...)`**: it reads exactly like the assignment ("if only one argument is provided … symmetric"). Alternative: separate `Symmetric` and `Asymmetric` functions — clearer types, but two names for one idea. |
+| Q2 | "Integers and/or floats" | **Generics (`[T Number]`)**: one function for every numeric slice, checked at compile time. A Go slice holds one type, so a mixed list is passed as `[]float64`. Alternative: `[]any`, which loses type safety. |
+| Q3 | Infinite values | **Allow ±Inf; reject a NaN or infinite result (`ErrNotFinite`)**: trimming is meant to remove extreme values, and the error catches the only harmful case. Alternative: reject any non-finite value. |
+| Q4 | trim ≥ 0.5 | **Reject (`ErrProportion`)** with a message that names R's median behaviour. Alternative: return the median as R does. |
+| Q5 | Asymmetric flag syntax | **`-trim "low,high"`**, one flag mirroring the function. Alternative: `-low` and `-high`. |
+| Q6 | First release version | **`v1.0.0`**, tagged once the package passes its acceptance (before R2); a fix found by R2 becomes `v1.0.1`. A firm's published offering signals a stable API. Alternative: `v0.1.0`. |
+| Q7 | Float comparison rule | **As §7**, settled by spike evidence; reproducing R's partial sort is **not** recommended: it would tie the package's arithmetic to R's internals for a gap of about two machine epsilons. |
+
+===== END OF BUNDLE (5 files) =====
