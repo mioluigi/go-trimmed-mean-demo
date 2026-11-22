@@ -5,6 +5,8 @@ were taken under the deadline with Claude's recommendation, for Luis to overturn
 
 ## 2026-11-22
 
+- **Package tasks T01–T02 started during R1 on branch `pre-approval` of `trimmedmean`, merged only after
+  approval** (deadline mode). Risk: rework if R1 changes the API. **(on Luis's behalf)**
 - **Float samples use 4 decimals, not 17 digits** (spike 001 addendum A): R's 17-digit read-back failed on the
   Mac. R computes from what it reads; its doubles are saved at 17 digits for a Go parity test. *Docs:*
   constitution 8.3; `r/capture-reference.R`; `scripts/check-inputs.sh`.
