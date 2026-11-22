@@ -1,0 +1,14 @@
+probe: 2026-11-22 17:49 EST
+machine: MacBookPro18,2 · Apple M1 Max · 64 GB · macOS 27.2.1
+cpus: 10
+go: go version go1.27.2 darwin/arm64
+go env: GOPROXY=https://proxy.golang.org,direct GOSUMDB=sum.golang.org GOPRIVATE= GOFLAGS=
+git: git version 2.54.0 (Apple Git-157)
+gh (GitHub CLI): MISSING
+R: R version 4.4.2 (2024-10-31) -- "Pile of Leaves"
+Rscript: present
+R sizeof long double: 8
+R mean(c(1, 2, 3, 4, 100), trim = 0.2): 3
+/usr/bin/time -l: present
+go module proxy (go get github.com/seehuhn/mt19937@v1.0.0): ok
+own module through proxy (go list -m …/go-applied-statistics@latest): ok · github.com/mioluigi/go-applied-statistics v0.0.0-20261115112517-44d3b0355db7

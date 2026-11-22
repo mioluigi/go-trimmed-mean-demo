@@ -1,0 +1,7 @@
+file	kind	n	generator	seed	bytes	sha256
+floats-100.csv	double	100	r/capture-reference.R	9431	757	2a9d856edf914c02b4cfcd87c53265c66bc566b685a40b7c621ec3290801f600
+floats-1000.csv	double	1000	r/capture-reference.R	9431	7538	1efdbb8aa550aef18031be03f4c7649958fd5eebcdbd9dee69e9c7e6cdc3be6d
+floats-101.csv	double	101	r/capture-reference.R	9431	761	995adeb0fe9fc13a404ab6e1c4ddec87e0fc35ce4700d13d4d2c4f012d69ccd7
+integers-100.csv	integer	100	r/capture-reference.R	9431	311	28defdfd7ddc251cdeee64ca389a7827066d7495e6a2ee487d20d29d91521698
+integers-1000.csv	integer	1000	r/capture-reference.R	9431	3056	d4cb96156794933c8b525745b7bfca4c3670a4b9fb5ce647368f44b285307af6
+integers-101.csv	integer	101	r/capture-reference.R	9431	314	f5644b0370b298c03bc982143c4e825bcdf198b1a893e4362d1c5a6423dbb0d0
