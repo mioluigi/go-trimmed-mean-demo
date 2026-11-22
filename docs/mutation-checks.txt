@@ -1,0 +1,37 @@
+Mutation checks (SFEDD §5.5; spec AC-11), 2026-11-22, run in Claude's workspace (Go 1.24.7).
+Each mutant changes behaviour; it is applied, 'go test -count=1 ./...' is run (no cached results, L-W8-03),
+and the file is restored. A mutant that only fails to compile does not count as caught (L-W6-14).
+Runner: /tmp/mutate.sh (inline in the build dialog); each line names the tests that failed.
+
+# Package github.com/mioluigi/trimmedmean (6fd1a6e)
+caught    M1 floor -> round for the lower count   by: TestDropCountsProperty,TestMeanAgreesWithR,TestMeanFloorRule
+caught    M2 upper index off by one   by: TestMeanAgreesWithR
+caught    M3 low and high swapped   by: ExampleMean_asymmetric,TestMeanAgreesWithR,TestMeanFloorRule,TestMeanHandComputed
+caught    M4 floats use the one-pass mean   by: TestMeanAgreesWithR,TestMeanIntegerAndFloatPaths,TestMeanOverflowFallback
+caught    M5 integers use the two-pass mean   by: TestMeanAgreesWithR,TestMeanIntegerAndFloatPaths
+caught    M6 proportion 0.5 accepted   by: TestMeanErrors
+caught    M7 negative proportion accepted   by: TestMeanErrors
+caught    M8 NaN value not rejected   by: TestMeanErrors
+caught    M9 overflow fallback removed   by: TestMeanOverflowFallback
+caught    M10 non-finite result not rejected   by: TestMeanInfinities
+caught    M11 untrimmed values sorted before averaging   by: TestMeanAgreesWithR
+caught    M12 one proportion trims only the bottom   by: ExampleMean,TestMeanHandComputed,TestMeanInfinities
+caught    M13 three proportions accepted   by: TestMeanErrors
+caught    M14 empty input not rejected   by: TestMeanErrors
+COMPILE-FAIL (does not count)  M15 integer types not recognised
+
+caught    M15 integer types not recognised (rewritten: the first version only failed to compile)   by: TestMeanAgreesWithR,TestMeanIntegerAndFloatPaths
+
+# Program github.com/mioluigi/go-trimmed-mean-demo (250a34e)
+caught    P1 exact rule allows 1 ULP   by: TestCheckExactRules,TestComparisonFailure
+caught    P2 full-sort exactness dropped from the tolerance rule   by: TestCheckToleranceRule
+caught    P3 tolerance 1000 times looser   by: TestCheckToleranceRule
+caught    P4 asymmetric rows judged by tolerance, not exactly   by: TestCheckExactRules
+caught    P5 input errors exit 1 instead of 2   by: TestInputErrors
+caught    P6 header line not skipped   by: TestComparisonFailure,TestComparisonMode,TestInputErrors,TestOneFileMode
+caught    P7 a failed comparison still exits 0   by: TestComparisonFailure
+caught    P8 report swaps the dropped counts   by: TestOneFileMode
+caught    P9 ULP distance wrong for negative numbers   by: TestULPDistance
+
+Result: 24 behavioural mutants, 24 caught, 0 survived. M15 was first written as 'return false', which only
+failed to compile (unused variable); it was rewritten and then caught.
