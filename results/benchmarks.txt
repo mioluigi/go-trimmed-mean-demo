@@ -1,0 +1,36 @@
+goos: darwin
+goarch: arm64
+pkg: github.com/mioluigi/trimmedmean
+cpu: Apple M1 Max
+BenchmarkMean/floats/n=100-10         	 1048497	      1130 ns/op	     896 B/op	       1 allocs/op
+BenchmarkMean/floats/n=100-10         	 1000000	      1106 ns/op	     896 B/op	       1 allocs/op
+BenchmarkMean/floats/n=100-10         	 1000000	      1105 ns/op	     896 B/op	       1 allocs/op
+BenchmarkMean/floats/n=100-10         	 1000000	      1102 ns/op	     896 B/op	       1 allocs/op
+BenchmarkMean/floats/n=100-10         	 1000000	      1102 ns/op	     896 B/op	       1 allocs/op
+BenchmarkMean/ints/n=100-10           	 1000000	      1004 ns/op	     896 B/op	       1 allocs/op
+BenchmarkMean/ints/n=100-10           	 1000000	      1016 ns/op	     896 B/op	       1 allocs/op
+BenchmarkMean/ints/n=100-10           	 1000000	      1006 ns/op	     896 B/op	       1 allocs/op
+BenchmarkMean/ints/n=100-10           	 1000000	      1008 ns/op	     896 B/op	       1 allocs/op
+BenchmarkMean/ints/n=100-10           	 1000000	      1009 ns/op	     896 B/op	       1 allocs/op
+BenchmarkMean/floats/n=10000-10       	    2080	    576641 ns/op	   81920 B/op	       1 allocs/op
+BenchmarkMean/floats/n=10000-10       	    2085	    576410 ns/op	   81920 B/op	       1 allocs/op
+BenchmarkMean/floats/n=10000-10       	    2097	    577952 ns/op	   81920 B/op	       1 allocs/op
+BenchmarkMean/floats/n=10000-10       	    2092	    575791 ns/op	   81920 B/op	       1 allocs/op
+BenchmarkMean/floats/n=10000-10       	    2080	    579969 ns/op	   81920 B/op	       1 allocs/op
+BenchmarkMean/ints/n=10000-10         	    2510	    478206 ns/op	   81920 B/op	       1 allocs/op
+BenchmarkMean/ints/n=10000-10         	    2523	    477685 ns/op	   81920 B/op	       1 allocs/op
+BenchmarkMean/ints/n=10000-10         	    2530	    473702 ns/op	   81920 B/op	       1 allocs/op
+BenchmarkMean/ints/n=10000-10         	    2506	    475851 ns/op	   81920 B/op	       1 allocs/op
+BenchmarkMean/ints/n=10000-10         	    2530	    474594 ns/op	   81920 B/op	       1 allocs/op
+BenchmarkMean/floats/n=1000000-10     	      13	  88773163 ns/op	 8003584 B/op	       1 allocs/op
+BenchmarkMean/floats/n=1000000-10     	      13	  88528811 ns/op	 8003584 B/op	       1 allocs/op
+BenchmarkMean/floats/n=1000000-10     	      13	  88745455 ns/op	 8003584 B/op	       1 allocs/op
+BenchmarkMean/floats/n=1000000-10     	      13	  88542798 ns/op	 8003584 B/op	       1 allocs/op
+BenchmarkMean/floats/n=1000000-10     	      13	  88475253 ns/op	 8003584 B/op	       1 allocs/op
+BenchmarkMean/ints/n=1000000-10       	      26	  44311296 ns/op	 8003588 B/op	       1 allocs/op
+BenchmarkMean/ints/n=1000000-10       	      26	  44277372 ns/op	 8003584 B/op	       1 allocs/op
+BenchmarkMean/ints/n=1000000-10       	      26	  44374798 ns/op	 8003584 B/op	       1 allocs/op
+BenchmarkMean/ints/n=1000000-10       	      26	  44556994 ns/op	 8003584 B/op	       1 allocs/op
+BenchmarkMean/ints/n=1000000-10       	      26	  44340814 ns/op	 8003588 B/op	       1 allocs/op
+PASS
+ok  	github.com/mioluigi/trimmedmean	34.479s

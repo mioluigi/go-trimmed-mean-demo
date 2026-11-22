@@ -1,0 +1,6 @@
+level=INFO msg="read sample" sample=integers-100 n=100 kind=integers
+level=INFO msg="read sample" sample=integers-101 n=101 kind=integers
+level=INFO msg="read sample" sample=integers-1000 n=1000 kind=integers
+level=INFO msg="read sample" sample=floats-100 n=100 kind=floats
+level=INFO msg="read sample" sample=floats-101 n=101 kind=floats
+level=INFO msg="read sample" sample=floats-1000 n=1000 kind=floats

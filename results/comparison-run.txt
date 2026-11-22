@@ -1,0 +1,10 @@
+Go trimmedmean.Mean(x, 0.05) against R mean(x, trim = 0.05), committed samples:
+sample         n     kind     Go                     R                      difference (ULPs)  verdict
+integers-100   100   integer  50.81111111111111      50.81111111111111      0                  PASS
+integers-101   101   integer  51.032967032967036     51.032967032967036     0                  PASS
+integers-1000  1000  integer  51.317777777777778     51.317777777777778     0                  PASS
+floats-100     100   double   0.082987777777777605   0.082987777777777827   16                 PASS
+floats-101     101   double   -0.042767032967032943  -0.042767032967032916  4                  PASS
+floats-1000    1000  double   -0.031235555555555555  -0.031235555555555468  25                 PASS
+
+84 of 84 comparisons with R agree (rule: spec §7). Full table: results/comparison.tsv
