@@ -80,6 +80,30 @@ chooses to reproduce R's partial sort (open decision for the spec).
 - **Lesson candidate.** A round-trip check that compares with the generator's memory tests the generator,
   not the shared file; compare what each side reads.
 
+## Addendum B (2026-11-22 18:05): the Mac results, prediction by prediction
+
+Evidence: commit `835c248` (`docs/spikes/env-mac.txt`, `testdata/r-reference/`), analysed in the workspace
+with Python (correctly rounded parsing, like Go's `strconv`).
+
+| # | Prediction | Outcome | Evidence |
+|---|---|---|---|
+| A | (addendum A) R's parser fails some 17-digit round trips on this Mac | **Held**: 28 of 100, 23 of 101, 268 of 1,000 values. With 4 decimals, R reads every value exactly as a correctly rounded parser does (0 differences of 1,201) | `parse-check.tsv`; `*-as-read-by-r.txt` |
+| P1 | `floor(n * trim)` in float64; `100 × 0.29` drops 28 | **Held** (28, 7, 5, 5) | `semantics.tsv`; `dropped_low` |
+| P2 | trim ≥ 0.5 → median; negative ignored; NA → NA; empty → NaN; length-2 trim → error | **Held**: `trim = -0.1` gives 22 (the untrimmed mean); 0.5 and 0.7 give the median 3; NA and NaN give NA; empty gives NaN; `c(0.1, 0.2)` and `NA` give "'trim' must be numeric of length one" | `semantics.tsv` |
+| P3 | Integers: order cannot matter | **Held**: 24 of 24 integer rows identical to the full-sort mean | `identical_to_full_sort` |
+| P4 | Doubles: R's partial sort changes the last bits | **Held**: 20 of 24 double rows differ from R's own full-sort mean, by up to 303 ULPs (the mean is near zero, so ULPs are small); **scaled by the mean absolute kept value, the worst gap is 4.7 × 10⁻¹⁶**, about two machine epsilons | `trimmed-means.tsv`; analysis above |
+| P5 | Integer and double input give the same R result | **Failed**: 12 of 24 integer rows differ from the same values as doubles. R averages integers with **one exact sum divided by n**, doubles with its two-pass method. The one-pass rule reproduces all 42 integer rows exactly | `identical_as_double`; single-pass check |
+| P6 | `mean(c(1e308, 1e308))` overflows to Inf on this Mac | **Failed**: R returns the value (`1.0000000000000006e+308`, which is how R's parser reads `1e308`). R has an **overflow fallback**: when the sum is infinite it re-adds `x/n` term by term | `semantics.tsv` |
+| P7 | Tag → `go get` from a fresh module works | pending (T07) | — |
+| P8 | The Mac fetches `mioluigi` modules through the proxy | **Held** | `env-mac.txt` |
+
+**Consequences for the spec (v1.1, before R1).** Integers use R's one-pass exact mean; doubles use R's
+two-pass mean with R's overflow fallback. Comparison rule: **exact** for integers, for untrimmed doubles (Go,
+like R, does not sort when nothing is trimmed) and for every asymmetric row (both sides sort fully); trimmed
+symmetric doubles must equal **R's full-sort mean exactly** and R's built-in within **10⁻¹⁴ × the mean absolute
+kept value** (20 times the measured worst gap). Reproducing R's partial sort is not worth tying the package to
+R's internals for gaps of about two epsilons (Q7).
+
 ## 5. Pre-mortem: "It is after midnight and this project failed. Why?"
 
 | # | Cause | Guard |
