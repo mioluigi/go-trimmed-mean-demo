@@ -1,0 +1,5 @@
+BenchmarkMean/floats/n=100-10  100  1700 ns/op  896 B/op  1 allocs/op
+BenchmarkMean/floats/n=100-10  100  1500 ns/op  896 B/op  1 allocs/op
+BenchmarkMean/floats/n=100-10  100  1600 ns/op  896 B/op  1 allocs/op
+BenchmarkMean/ints/n=1000000-10  4  62000000 ns/op  8003584 B/op  1 allocs/op
+PASS
