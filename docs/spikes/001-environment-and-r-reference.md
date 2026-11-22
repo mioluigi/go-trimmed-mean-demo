@@ -66,6 +66,20 @@ chooses to reproduce R's partial sort (open decision for the spec).
 | P7 | After `git tag v… && git push --tags` on the Mac, `go get github.com/mioluigi/trimmedmean@v…` works from a fresh module on the Mac within a minute | public repository; default `GOPROXY`, `GOSUMDB`; no `GOPRIVATE` match | Build phase, task "release"; acceptance |
 | P8 | The Mac already fetches `mioluigi` modules through the public proxy | as P7 | `env-mac.txt`: `go list -m github.com/mioluigi/go-applied-statistics@latest` |
 
+## Addendum A (2026-11-22 17:55): the first R capture stopped
+
+- **What happened.** `capture-r.sh` stopped at `stopifnot(identical(values_read, values))`: a sample written
+  with `%.17g` and read back by `as.numeric` was not identical to the values R generated. Nothing was committed.
+- **Hypothesis, not yet shown.** R reads numbers with its own parser (`R_strtod`), which accumulates digits in
+  a long double. The Mac probe shows `sizeof long double: 8`, so on this arm64 Mac the accumulation is plain
+  double and a 17-digit string can come back one unit in the last place away. `testdata/r-reference/parse-check.tsv`
+  counts, per float sample, the values whose 17-digit round trip fails, as evidence.
+- **Change.** Floats are written with 4 decimals, as in Week 8; R computes from what it **read**; and R saves
+  those doubles at 17 digits (`sprintf` is exact) in `testdata/r-reference/*-as-read-by-r.txt`, so a Go test
+  proves Go's `strconv.ParseFloat` reads the same doubles from the sample files. Constitution 8.3 amended.
+- **Lesson candidate.** A round-trip check that compares with the generator's memory tests the generator,
+  not the shared file; compare what each side reads.
+
 ## 5. Pre-mortem: "It is after midnight and this project failed. Why?"
 
 | # | Cause | Guard |

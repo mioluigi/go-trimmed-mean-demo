@@ -47,15 +47,37 @@ samples <- list(
 dir.create("data", showWarnings = FALSE)
 dir.create("testdata/r-reference", recursive = TRUE, showWarnings = FALSE)
 
-# write_sample saves a sample and reads it back, so that every result below is computed from the
-# exact bytes Go will read, not from R's memory.
+# Spike 001 addendum A: the first capture stopped because a 17-digit sample did not read back
+# identically in R. This records, per float sample, how many values fail that round trip, as
+# evidence for the cause, before the samples are written the way Week 8 wrote them.
+parse_checks <- do.call(rbind, lapply(names(samples), function(name) {
+  values <- samples[[name]]
+  if (is.integer(values)) return(NULL)
+  read_17 <- as.numeric(sprintf("%.17g", values))
+  data.frame(sample = name, n = length(values), mismatches_17_digits = sum(read_17 != values),
+             stringsAsFactors = FALSE)
+}))
+write.table(parse_checks, "testdata/r-reference/parse-check.tsv",
+            sep = "\t", quote = FALSE, row.names = FALSE)
+
+# write_sample saves a sample and returns what R reads back from the file, so that every result
+# below is computed from the bytes Go will read, not from R's memory. Floats are written with 4
+# decimals (as in Week 8), a precision whose text R and Go both read without ambiguity; the
+# doubles R actually read are saved at 17 digits (sprintf is exact) so a Go test can prove it
+# reads the very same doubles.
 write_sample <- function(name, values) {
   path <- file.path("data", paste0(name, ".csv"))
-  text <- if (is.integer(values)) as.character(values) else format_value(values)
+  text <- if (is.integer(values)) as.character(values) else formatC(values, format = "f", digits = 4)
   writeLines(c("value", text), path)
   read_back <- readLines(path)[-1]
-  values_read <- if (is.integer(values)) as.integer(read_back) else as.numeric(read_back)
-  stopifnot(identical(values_read, values))
+  if (is.integer(values)) {
+    values_read <- as.integer(read_back)
+    stopifnot(identical(values_read, values))
+  } else {
+    values_read <- as.numeric(read_back)
+    writeLines(c("value", format_value(values_read)),
+               file.path("testdata/r-reference", paste0(name, "-as-read-by-r.txt")))
+  }
   values_read
 }
 samples <- Map(write_sample, names(samples), samples)

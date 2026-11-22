@@ -3,7 +3,7 @@
 #
 # Checks every sample against data/MANIFEST.tsv: present, expected count, recorded size and SHA-256,
 # header "value", n observations (at least 100), every value well formed for its kind (whole numbers
-# for "integer", R's %.17g output for "double"), and no stray files. Run before committing data, and
+# for "integer", exactly 4 decimals for "double", as Week 8), and no stray files. Run before committing data, and
 # by measure.sh and acceptance.sh.
 #
 # Environment: DATA_DIR (default data), EXPECTED_FILES (default 6).
@@ -24,7 +24,7 @@ sha256_of() {
 [ -f "$manifest" ] || { echo "check-inputs: $manifest is missing; run scripts/capture-r.sh on the Mac." >&2; exit 1; }
 
 integer_pattern='^-?[0-9]+$'
-double_pattern='^-?[0-9]+(\.[0-9]+)?(e[-+][0-9]+)?$'
+double_pattern='^-?[0-9]+\.[0-9]{4}$'
 
 count=0
 while IFS=$'\t' read -r file kind n generator seed bytes sha256; do

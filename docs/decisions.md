@@ -5,6 +5,9 @@ were taken under the deadline with Claude's recommendation, for Luis to overturn
 
 ## 2026-11-22
 
+- **Float samples use 4 decimals, not 17 digits** (spike 001 addendum A): R's 17-digit read-back failed on the
+  Mac. R computes from what it reads; its doubles are saved at 17 digits for a Go parity test. *Docs:*
+  constitution 8.3; `r/capture-reference.R`; `scripts/check-inputs.sh`.
 - **The workspace cannot reach the Go module proxy or checksum database (HTTP 403).** The package will have
   no dependencies; the program's `go.mod` and `go.sum` are produced on the Mac from the released tag. No
   `go.work` or `replace` line is committed. *Docs:* constitution 4.4; spike 001 §1.
