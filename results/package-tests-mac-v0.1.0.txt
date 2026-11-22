@@ -1,0 +1,46 @@
+go version go1.27.2 darwin/arm64
+=== RUN   TestDropCountsProperty
+--- PASS: TestDropCountsProperty (0.00s)
+=== RUN   TestDropCountsLargeN
+    counts_test.go:45: n=2^20: dropLow=524287 dropHigh=524287 err=<nil>
+    counts_test.go:45: n=2^40: dropLow=549755813887 dropHigh=549755813887 err=<nil>
+    counts_test.go:45: n=2^53: dropLow=4503599627370495 dropHigh=4503599627370495 err=<nil>
+--- PASS: TestDropCountsLargeN (0.00s)
+=== RUN   TestSourceQuality
+--- PASS: TestSourceQuality (0.00s)
+=== RUN   TestMeanAgreesWithR
+--- PASS: TestMeanAgreesWithR (0.04s)
+=== RUN   TestGoReadsWhatRRead
+--- PASS: TestGoReadsWhatRRead (0.00s)
+=== RUN   TestMeanHandComputed
+--- PASS: TestMeanHandComputed (0.00s)
+=== RUN   TestMeanFloorRule
+--- PASS: TestMeanFloorRule (0.00s)
+=== RUN   TestMeanIntegerAndFloatPaths
+--- PASS: TestMeanIntegerAndFloatPaths (0.00s)
+=== RUN   TestMeanOverflowFallback
+--- PASS: TestMeanOverflowFallback (0.00s)
+=== RUN   TestMeanInfinities
+--- PASS: TestMeanInfinities (0.00s)
+=== RUN   TestMeanErrors
+--- PASS: TestMeanErrors (0.00s)
+=== RUN   TestMeanLeavesInputUnchanged
+--- PASS: TestMeanLeavesInputUnchanged (0.00s)
+=== RUN   TestMeanKeepsAtLeastOne
+--- PASS: TestMeanKeepsAtLeastOne (0.00s)
+=== RUN   TestDropCountsGuard
+--- PASS: TestDropCountsGuard (0.00s)
+=== RUN   FuzzMean
+=== RUN   FuzzMean/seed#0
+=== RUN   FuzzMean/seed#1
+--- PASS: FuzzMean (0.00s)
+    --- PASS: FuzzMean/seed#0 (0.00s)
+    --- PASS: FuzzMean/seed#1 (0.00s)
+=== RUN   ExampleMean
+--- PASS: ExampleMean (0.00s)
+=== RUN   ExampleMean_asymmetric
+--- PASS: ExampleMean_asymmetric (0.00s)
+=== RUN   ExampleMean_errors
+--- PASS: ExampleMean_errors (0.00s)
+PASS
+ok  	github.com/mioluigi/trimmedmean	1.185s
