@@ -93,9 +93,18 @@ func TestComparisonFailure(t *testing.T) {
 	}
 	tampered := strings.Replace(string(original), "50.81111111111111", "50.81111111111112", 1)
 	reference := writeInput(t, tampered)
-	code, stdout, stderr := runBinary(t, "-reference", reference, "-out", filepath.Join(t.TempDir(), "c.tsv"))
+	outDir := t.TempDir()
+	code, stdout, stderr := runBinary(t, "-reference", reference, "-out", filepath.Join(outDir, "c.tsv"))
 	if code != exitFailure || !strings.Contains(stdout, "FAIL") || !strings.Contains(stderr, "1 comparisons with R failed") {
 		t.Fatalf("exit %d, stdout:\n%s\nstderr:\n%s", code, stdout, stderr)
+	}
+	// Review R2: a failed run leaves the table it wrote and no temporary file.
+	entries, err := os.ReadDir(outDir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(entries) != 1 || entries[0].Name() != "c.tsv" {
+		t.Fatalf("output folder holds %v, want only c.tsv", entries)
 	}
 }
 

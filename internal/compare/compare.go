@@ -82,7 +82,11 @@ func ULPDistance(a, b float64) uint64 {
 	return uint64(difference)
 }
 
+// meanAbsolute is the scale of the tolerance; with no values it is 0, so the limit is 0, never NaN.
 func meanAbsolute(values []float64) float64 {
+	if len(values) == 0 {
+		return 0
+	}
 	total := 0.0
 	for _, value := range values {
 		total += math.Abs(value)
@@ -106,9 +110,13 @@ func ReadReferences(path string) ([]Reference, error) {
 	if len(records) < 2 {
 		return nil, fmt.Errorf("%s has no reference rows", path)
 	}
+	columns, err := columnIndex(records[0])
+	if err != nil {
+		return nil, fmt.Errorf("%s: %w", path, err)
+	}
 	references := make([]Reference, 0, len(records)-1)
 	for line, record := range records[1:] {
-		reference, err := parseReference(record)
+		reference, err := parseReference(columns, record)
 		if err != nil {
 			return nil, fmt.Errorf("%s line %d: %w", path, line+2, err)
 		}
@@ -117,23 +125,42 @@ func ReadReferences(path string) ([]Reference, error) {
 	return references, nil
 }
 
-// parseReference turns one record (sample, kind, n, low, high, method, value, dropped_low, dropped_high,
-// identical_to_full_sort, identical_as_double, full_sort_value) into a Reference.
-func parseReference(record []string) (Reference, error) {
-	if len(record) != 12 {
-		return Reference{}, fmt.Errorf("%d fields, want 12", len(record))
+// requiredColumns are the reference file's columns this package reads, by header name; other columns
+// (such as identical_to_full_sort) are ignored.
+var requiredColumns = []string{
+	"sample", "kind", "n", "low", "high", "method", "value", "dropped_low", "dropped_high", "full_sort_value",
+}
+
+// columnIndex maps each required column name to its position in the header.
+func columnIndex(header []string) (map[string]int, error) {
+	positions := map[string]int{}
+	for position, name := range header {
+		positions[name] = position
 	}
-	numbers := make([]float64, 0, 7)
-	for _, index := range []int{2, 3, 4, 6, 7, 8, 11} {
-		value, err := strconv.ParseFloat(record[index], 64)
-		if err != nil {
-			return Reference{}, fmt.Errorf("field %d: %w", index+1, err)
+	for _, name := range requiredColumns {
+		if _, ok := positions[name]; !ok {
+			return nil, fmt.Errorf("no column %q in the header", name)
 		}
-		numbers = append(numbers, value)
 	}
-	return Reference{
-		Sample: record[0], Kind: record[1], Method: record[5],
-		N: int(numbers[0]), Low: numbers[1], High: numbers[2], Value: numbers[3],
-		DropLow: int(numbers[4]), DropHigh: int(numbers[5]), FullSortValue: numbers[6],
-	}, nil
+	return positions, nil
+}
+
+// parseReference reads one record through the column positions found in the header.
+func parseReference(columns map[string]int, record []string) (Reference, error) {
+	text := func(name string) string { return record[columns[name]] }
+	var parseErr error
+	number := func(name string) float64 {
+		value, err := strconv.ParseFloat(text(name), 64)
+		if err != nil && parseErr == nil {
+			parseErr = fmt.Errorf("column %q: %w", name, err)
+		}
+		return value
+	}
+	reference := Reference{
+		Sample: text("sample"), Kind: text("kind"), Method: text("method"),
+		N: int(number("n")), Low: number("low"), High: number("high"), Value: number("value"),
+		DropLow: int(number("dropped_low")), DropHigh: int(number("dropped_high")),
+		FullSortValue: number("full_sort_value"),
+	}
+	return reference, parseErr
 }

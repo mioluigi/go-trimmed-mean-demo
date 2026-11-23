@@ -74,6 +74,8 @@ measured="$(awk '/^commit:/ {print $2}' results/machine.txt 2>/dev/null)"
 check "what was measured is what is submitted: no code or data change since commit ${measured:-?}" \
   sh -c "[ -n '$measured' ] && git diff --quiet '$measured' HEAD -- '*.go' go.mod go.sum data testdata"
 check "results were measured with trimmedmean $version" has results/machine.txt "trimmedmean: $version"
+check "CPU and memory profiles of the 1,000,000-value run are committed (NFR-3)" sh -c \
+  'test -s results/cpu.prof -a -s results/mem.prof && grep -q "1,000,000" results/cpu-profile.txt && grep -q "same run" results/mem-profile.txt'
 check "program README: get and use the package, build, run, test, results, limits, GenAI Tools (FR-13, AC-13)" \
   has README.md "go get github.com/mioluigi/trimmedmean@$version" "## Getting and using the package" "## Building" "## Running" "## Testing" "## Results" "## Limits" "## GenAI Tools"
 check "AI dialogs are indexed: docs/ai-dialogs/README.md lists every file there (AC-13)" sh -c \

@@ -20,6 +20,7 @@ Status: **v2 — APPROVED** by Luis, 2026-11-22 18:55 ET; T01–T04 done on bran
 | T12 | C | Scripts: `build.sh`, `build-macos-app.sh`, `measure.sh`, `readme.sh`, `cmd/tables`, `acceptance.sh`, `review-bundle.sh` (AC-12, 14) | each script's pass and fail case | demo |
 | T13 | M | `scripts/measure.sh` official run → `results/` | freshness guard passed; comparison all PASS | demo |
 | T14 | C | Program README with generated blocks; GenAI Tools; re-check every sentence (AC-13, 14) | `readme.sh --check` | demo |
+| T15a | C | R2 fixes: reference columns by name, empty-scale guard, no stray temporary file, profile acceptance check | tests red → green | demo |
 | T15 | M | Tag `v1.0.0`, move the program to it, acceptance on fresh clones of both repositories (AC-7, 8, 12, 13, 15, 16) | `acceptance.sh`: all PASS | both |
 | T16 | M | Export AI dialogs to `docs/ai-dialogs/` + index | files present | demo |
 | — | C/M | *(Deferred, optional)* S8 bootstrap study, only after T16 | — | demo |
