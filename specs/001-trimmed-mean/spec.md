@@ -166,6 +166,13 @@ Messages in this table are the **program's**; the package returns the matching e
 | AC-15 | Every script and guard (data gate, measurement freshness, acceptance checks) is tested on a passing and a failing case | script tests |
 | AC-16 | Every exported identifier of the package has a doc comment; no function exceeds 40 lines; `gofmt -l` and `go vet` are clean | package test (`go/ast`) + acceptance |
 
+### 9.1 Acceptance status (2026-11-22 20:02 ET)
+
+**All 16 acceptance criteria (AC-1 … AC-16, with AC-2a) are met.** Evidence: `results/acceptance-mac.txt`
+(24 of 24 checks on fresh clones of both repositories, package `v1.0.0`, program `244dda2`), the package
+tests on the Mac (`results/package-tests-mac-v1.0.0.txt`), `docs/mutation-checks.txt` (AC-11, 24 of 24
+caught) and the official run (`results/`, measured at `7862922`).
+
 ## 10. Traceability
 
 | Step | Requirements | ACs |
