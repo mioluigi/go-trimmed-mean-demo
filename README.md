@@ -213,8 +213,15 @@ medians):
 <!-- END generated:benchmarks -->
 
 The package makes one allocation per call: a float64 copy of the input, which it sorts, so the caller's
-slice is never changed. Profiles of the program on a file of 1,000,000 values are in
-[`results/cpu-profile.txt`](results/cpu-profile.txt) and [`results/mem-profile.txt`](results/mem-profile.txt).
+slice is never changed. The integer benchmarks are faster than the float ones of the same size because
+their values are drawn from only 1,000 distinct integers, which sort faster, and integers need one pass
+instead of two.
+
+Profiles of the program on a file of 1,000,000 values are in [`results/cpu-profile.txt`](results/cpu-profile.txt)
+and [`results/mem-profile.txt`](results/mem-profile.txt). They show that, for the **program**, reading the
+file costs more than the trimmed mean: most of the memory allocated is the reader's line buffer
+(`sample.readValueLines`), and the sort (`slices.partitionOrdered`) is the largest single CPU cost of the
+package. A reader that parses as it scans would cut the program's memory; the package is not affected.
 
 <!-- BEGIN generated:machine -->
 ```
