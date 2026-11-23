@@ -1,0 +1,277 @@
+Bundle Inventory
+All 22 files listed at the top of the bundle (from commit 58db9ca) are present:
+   ●​ docs/assignment-and-rubric.md — first line: # Assignment Requirements and Rubric
+       (summary)
+   ●​ specs/001-trimmed-mean/spec.md — first line: # Spec 001: Trimmed mean package and
+       demonstration program
+   ●​ README.md — first line: # go-trimmed-mean-demo
+   ●​ results/tables.md — first line: # Generated tables (cmd/tables; do not edit)
+   ●​ docs/mutation-checks.txt — first line: Mutation checks (SFEDD §5.5; spec AC-11),
+       2026-11-22, run in Claude's workspace (Go 1.24.7).
+   ●​ docs/reviews/001-spec-review.md — first line: # Review R1: spec 001 — triage
+   ●​ go.mod — first line: module
+       [github.com/mioluigi/go-trimmed-mean-demo](https://github.com/mioluigi/go-trimmed-mea
+       n-demo)
+   ●​ main.go — first line: // Command go-trimmed-mean-demo shows the trimmedmean
+       package in use.
+   ●​ comparison.go — first line: package main
+   ●​ internal/compare/compare.go — first line: // Package compare holds the rule by which a
+       Go trimmed mean is judged to agree with R's (spec §7), and
+   ●​ internal/sample/sample.go — first line: // Package sample reads a column of numbers
+       from a text file, as integers when every value is a whole
+   ●​ main_test.go — first line: package main
+   ●​ scripts/acceptance.sh — first line: #!/usr/bin/env bash
+   ●​ ../trimmedmean/README.md — first line: # trimmedmean
+   ●​ ../trimmedmean/go.mod — first line: module
+       [github.com/mioluigi/trimmedmean](https://github.com/mioluigi/trimmedmean)
+   ●​ ../trimmedmean/trimmedmean.go — first line: // Package trimmedmean computes
+       symmetric and asymmetric trimmed means of integer or floating-point
+   ●​ ../trimmedmean/trimmedmean_test.go — first line: package trimmedmean
+   ●​ ../trimmedmean/reference_test.go — first line: package trimmedmean
+   ●​ ../trimmedmean/counts_test.go — first line: package trimmedmean
+   ●​ ../trimmedmean/example_test.go — first line: package trimmedmean_test
+   ●​ ../trimmedmean/fuzz_test.go — first line: package trimmedmean
+   ●​ ../trimmedmean/quality_test.go — first line: package trimmedmean
+(Note: Commit 58db9ca is stated on the bundle header; none of the individual files has a
+commit hash on its first line.)
+1. Rubric scores
+  ●​ [C] Coding rules, organization, aesthetics — 18 / 20
+  ○​ Evidence: Both go.mod files define clean Go modules (module
+      [github.com/mioluigi/trimmedmean](https://github.com/mioluigi/trimmedmean) in
+      ../trimmedmean/go.mod; module
+      [github.com/mioluigi/go-trimmed-mean-demo](https://github.com/mioluigi/go-trimmed-mea
+    n-demo) in go.mod). ../trimmedmean/trimmedmean.go exports Number, sentinel errors
+    (ErrEmpty, ErrNaN, ErrProportion, ErrProportionCount, ErrNotFinite), and Mean[T
+    Number] with doc comments, small functions, and validProportion returning p >= 0 && p
+    < 0.5. ../trimmedmean/quality_test.go checks maxFunctionLines = 40 and doc comments
+    on exported declarations. However, docs/assignment-and-rubric.md (Rubric table, [C])
+    cites "McConnell 2004, 777–817" and "distribute the NOT", and
+    internal/compare/compare.go (parseReference) uses a 40-line-ish loop with magic
+    column indices ({2, 3, 4, 6, 7, 8, 11}) rather than named headers.
+○​ Needed for 20/20: A check or reading confirming gofmt and go vet are clean across both
+    repos and eliminating raw positional slice indexing in internal/compare/compare.go
+    (parseReference).
+●​ [T] Testing and software metrics — 17 / 20
+○​ Evidence: Synthetic unit tests, floor tests, overflow/infinity tests, error tests,
+    slice-immutability tests, R reference tests, examples, fuzz test (FuzzMean), and AST
+    quality tests exist in ../trimmedmean/*_test.go; main_test.go tests the built binary for exit
+    codes (0, 1, 2), profiles, and comparison mode; docs/mutation-checks.txt reports 24
+    caught behavioural mutants; README.md (Results) reports 87.93 ms and 7.63 MiB (1
+    alloc) for floats/n=1000000 and points to results/cpu-profile.txt and
+    results/mem-profile.txt. However, results/cpu-profile.txt and results/mem-profile.txt are not
+    inside the bundle, and main_test.go (TestInputErrors) tests floats-100.csv rather than
+    large 1,000,000-row binary profiling in main_test.go.
+○​ Needed for 20/20: Confirmation in results/cpu-profile.txt and results/mem-profile.txt (and
+    scripts/acceptance.sh) on the largest sample and released tag (v1.0.0).
+●​ [D] Design and development — 18 / 20
+○​ Evidence: ../trimmedmean/trimmedmean.go is a standalone generic module with no
+    external dependencies in ../trimmedmean/go.mod, sorts a copy (toFloat64 allocates a
+    new []float64), holds no mutable state, and returns sentinel errors. go.mod in the demo
+    repo has no replace directive. However, go.mod currently requires
+    [github.com/mioluigi/trimmedmean](https://github.com/mioluigi/trimmedmean) v0.1.0
+    while README.md (Getting and using the package) and ../trimmedmean/README.md
+    (Install) instruct users to go get
+    [github.com/mioluigi/trimmedmean@v1.0.0](https://github.com/mioluigi/trimmedmean@v1
+    .0.0)—which does not exist until tagged after this review.
+○​ Needed for 20/20: Tagging v1.0.0 on
+    [github.com/mioluigi/trimmedmean](https://github.com/mioluigi/trimmedmean) and
+    updating go.mod (and go.sum) in go-trimmed-mean-demo to v1.0.0 as planned in
+    specs/001-trimmed-mean/spec.md (§11, Q6).
+●​ [Doc] Documentation — 17 / 20
+○​ Evidence: Both README.md (go-trimmed-mean-demo/README.md) and
+    ../trimmedmean/README.md exist and cover installation, usage, errors, limits, R
+    differences, tests, and GenAI Tools (README.md under GenAI Tools,
+    ../trimmedmean/README.md under Install, Use, Errors, Differences from R, Limits,
+    Tests, Licence). However, scripts/acceptance.sh checks has README.md ... "## Install"
+     "## Use" "## Errors" "## Limits" "## Differences from R" "## Tests" "## Licence" for the
+     package README, whereas ../trimmedmean/README.md uses # trimmedmean and ##
+     Install, ## Use, ## Definition, ## Errors, ## Differences from R, ## Limits, ## Tests, ##
+     Licence (not every required heading in scripts/acceptance.sh is matched verbatim, and
+     docs/ai-dialogs/ is referenced in README.md (GenAI Tools) but not included in the
+     bundle).
+ ○​ Needed for 20/20: Aligning the exact headings/strings checked by scripts/acceptance.sh
+     (has checks) and verifying docs/ai-dialogs/README.md indexes all dialog files
+     (specs/001-trimmed-mean/spec.md §9, AC-13).
+ ●​ [A] Application — 17 / 20
+ ○​ Evidence: README.md (Building) documents go build, scripts/build.sh (producing
+     trimmed-mean-demo-macos-arm64, trimmed-mean-demo-macos-amd64, and
+     trimmed-mean-demo.exe), and scripts/build-macos-app.sh (dist/TrimmedMean.app).
+     main.go validates flags and proportions, logs to stderr, writes results to stdout and
+     atomically to results/comparison.tsv (comparison.go, writeTable), and maps errors to exit
+     codes 0, 1, 2 (exitCode). However, scripts/build.sh and scripts/build-macos-app.sh are
+     not in the bundle, and main_test.go (TestInputErrors) tests floats-100.csv rather than a
+     1,000,000-row profile run.
+ ○​ Needed for 20/20: Running scripts/acceptance.sh on fresh clones after tagging v1.0.0 to
+     verify .exe, macOS binaries, and TrimmedMean.app build cleanly
+     (specs/001-trimmed-mean/spec.md §9, AC-8, AC-12).
+2. Assignment steps S1–S9
+ ●​ S1 (Package in its own repository, tutorialspoint mapping): Met (pending v1.0.0 tag
+    push). ../trimmedmean/go.mod (module
+    [github.com/mioluigi/trimmedmean](https://github.com/mioluigi/trimmedmean)) and
+    ../trimmedmean/trimmedmean.go place the package in its own module/repository, and
+    README.md (Contents) notes the scripts/ and docs/ layout.
+ ●​ S2 (Slice of ints/floats, proportions after sorting): Met.
+    ../trimmedmean/trimmedmean.go (Mean[T Number]) accepts slices of integer or float
+    types (Number), copies into []float64, sorts when trimming (slices.Sort(numbers)), and
+    computes dropLow and dropHigh via math.Floor(n * p).
+ ●​ S3 (Asymmetric trimming): Met. ../trimmedmean/trimmedmean.go (Mean,
+    trimProportions) accepts two proportions (low, high) and slices numbers[dropLow :
+    len(numbers)-dropHigh].
+ ●​ S4 (One proportion → symmetric): Met. ../trimmedmean/trimmedmean.go
+    (trimProportions) sets low, high = proportions[0], proportions[0] when len(proportions) ==
+    1.
+ ●​ S5 (Second repository whose main.go imports the package): Met. main.go imports
+    "[github.com/mioluigi/trimmedmean](https://github.com/mioluigi/trimmedmean)" and calls
+    trimmedmean.Mean(...) in meanOf.
+ ●​ S6 (Test against R mean(x, trim = 0.05) on ≥ 100 ints and ≥ 100 floats): Met.
+    README.md (Contents, Results) and main_test.go (TestComparisonMode) test
+    integers-100, integers-101, integers-1000, floats-100, floats-101, and floats-1000 at trim =
+    0.05 (and all 84 reference rows).
+ ●​ S7 (Second repository README gives complete instructions for getting and using
+    the package, and summarizes Go vs. R): Met. README.md (Getting and using the
+    package, steps 1–5; Summary, Results, How the comparison with R works) provides
+    step-by-step go mod init, go get, import, call, and errors.Is usage plus Go-vs-R tables and
+    narrative.
+ ●​ S8 (Optional bootstrap study): Not done (intentionally deferred). Listed as optional in
+    docs/assignment-and-rubric.md (Required steps, S8) and marked deferred in
+    specs/001-trimmed-mean/spec.md (§10, Traceability).
+ ●​ S9 (Both repo URLs, README in each, GenAI Tools + logs): Partially met (pending
+    URL submission & v1.0.0 tag). Both README.md and ../trimmedmean/README.md
+    exist and include GenAI Tools (README.md under GenAI Tools;
+    ../trimmedmean/README.md notes the example repo and tests), and README.md links
+    docs/ai-dialogs/README.md, though docs/ai-dialogs/ is not included in the bundle and
+    the v1.0.0 tag has not yet been created (go.mod has v0.1.0).
+3. Code review
+ ●​ Severity: High
+ ○​ Where: go.mod (require
+    [github.com/mioluigi/trimmedmean](https://github.com/mioluigi/trimmedmean) v0.1.0) vs.
+    README.md (Getting and using the package: "go get
+    [github.com/mioluigi/trimmedmean@v1.0.0](https://github.com/mioluigi/trimmedmean@v1
+    .0.0)") and specs/001-trimmed-mean/spec.md (§11, Q6: "v1.0.0 after R2's fixes, and the
+    program moves to it in the final acceptance step")
+ ○​ Problem: go.mod currently pins v0.1.0 while the READMEs instruct users to fetch v1.0.0
+    and the prompt states the package will be released as v1.0.0 after this review. If
+    scripts/acceptance.sh runs with default PACKAGE_VERSION (v0.1.0 from go.mod) while
+    README.md checks has README.md "go get [github.com/mioluigi/trimmedmean@
+    𝑣𝑒𝑟𝑠𝑖𝑜𝑛](ℎ𝑡𝑡𝑝𝑠: //𝑔𝑖𝑡ℎ𝑢𝑏. 𝑐𝑜𝑚/𝑚𝑖𝑜𝑙𝑢𝑖𝑔𝑖/𝑡𝑟𝑖𝑚𝑚𝑒𝑑𝑚𝑒𝑎𝑛@version)", the README check
+    will fail unless go.mod and README.md agree on v1.0.0.
+ ○​ Suggested change: A check (grep / scripts/acceptance.sh) confirms go.mod requires
+    v1.0.0 (after tagging v1.0.0 on trimmedmean and updating go.sum) and both READMEs
+    reference @v1.0.0 consistently.
+ ●​ Severity: Medium
+ ○​ Where: ../trimmedmean/trimmedmean.go (isInteger[T Number](): "var one T = 1; return
+    one/2 == 0")
+ ○​ Problem: isInteger determines whether T is an integer type at runtime by executing one /
+    2 == 0 for one T = 1. For all float types (float32, float64), 1.0 / 2.0 == 0.5 != 0, and for all
+    integer types (int..int64, uint..uint64), integer division truncates 1 / 2 to 0, so it works for
+    all current Number members, but relies on arithmetic truncation rather than a type switch
+    or explicit distinction, and floatMean converts values ([]float64) after toFloat64 already
+    converted []T to []float64.
+ ○​ Suggested change: A unit test (TestMeanIntegerAndFloatPaths in
+    ../trimmedmean/trimmedmean_test.go) verifies that integer slices use the one-pass sum
+    (12.166666666666666 for {10, 1, 12, 14, 6, 30}) and float slices use the two-pass sum
+    (12.166666666666668).
+ ●​ Severity: Medium
+ ○​ Where: internal/compare/compare.go (Check(reference Reference, got float64, kept
+    []float64) Result: "pass := got == reference.FullSortValue &&
+    math.Abs(got-reference.Value) <= limit")
+ ○​ Problem: For trimmed symmetric float rows (!needsExact(reference)), Check requires
+    both exact equality with reference.FullSortValue (got == reference.FullSortValue) and
+    math.Abs(got-reference.Value) <= limit (Tolerance = 1e-14). If Go's two-pass float mean
+    or overflow fallback on a platform or input differs by 1 ULP from reference.FullSortValue,
+    got == reference.FullSortValue fails even when math.Abs(got-reference.Value) <= limit.
+    Also, if len(kept) == 0, meanAbsolute(kept) divides by 0 (NaN), though dropCounts
+    prevents empty kept slices for valid proportions.
+ ○​ Suggested change: A unit test in internal/compare checks Check when got equals
+    reference.FullSortValue and |got - reference.Value| <= Tolerance * meanAbsolute(kept)
+    passes, and fails when either got != reference.FullSortValue or |got - reference.Value| >
+    Tolerance * meanAbsolute(kept).
+ ●​ Severity: Low
+ ○​ Where: main.go (run: "defer stopProfiles(logger)") and comparison.go (writeTable: "defer
+    os.Remove(temporary.Name())")
+ ○​ Problem: In comparison.go (writeTable), if os.Rename(temporary.Name(), path)
+    succeeds, defer os.Remove(temporary.Name()) attempts to remove the old temp
+    filename, which is harmless because os.Rename already moved it, and if
+    temporary.Close() fails, writeTable returns an error before os.Rename. In main.go (run),
+    runOne and runComparison return errors that exitCode(err) maps to exitUsage (2) or
+    exitFailure (1), while startProfiles errors return exitFailure (1).
+ ○​ Suggested change: A test (TestComparisonFailure and TestInputErrors in main_test.go)
+    verifies that failed comparisons exit 1 without leaving stray .comparison-*.tsv files in the
+    output directory, and invalid inputs/flags exit 2.
+4. Evidence check
+ ●​ Matches results/tables.md and docs/mutation-checks.txt:
+ ○​ README.md (Summary, Results) headline bullets (84 of 84, 3 of 3, 2.2e-16, 87.93 ms,
+    7.63 MiB, 1 allocation), comparison table (integers-100..floats-1000), agreement table
+    (21, 21, 42 rows; max 303 ULPs), benchmark table (floats/n=100 at 1.10 µs / 896 B / 1
+    alloc through ints/n=1000000 at 44.06 ms / 7.63 MiB / 1 alloc), and machine block
+    (measured: 2026-11-22 19:36 EST, commit: 2304f25, MacBookPro18,2 · Apple M1 Max ·
+    64 GB · macOS 27.2.1, go version go1.27.2 darwin/arm64, trimmedmean: v0.1.0, R
+    version 4.4.2) match results/tables.md.
+ ○​ README.md (Testing) cites 24 caught behavioural mutants (docs/mutation-checks.txt: 15
+    package mutants M1–M15 after rewriting M15 from COMPILE-FAIL, plus 9 program
+    mutants P1–P9 = 24 caught).
+ ●​ Stale / mismatched / unverified in bundle:
+ ○​ Severity: High — README.md (Getting and using the package) and
+    ../trimmedmean/README.md (Install) state go get
+    [github.com/mioluigi/trimmedmean@v1.0.0](https://github.com/mioluigi/trimmedmean@v1
+    .0.0), while go.mod (require
+    [github.com/mioluigi/trimmedmean](https://github.com/mioluigi/trimmedmean) v0.1.0) and
+    results/tables.md (machine: trimmedmean: v0.1.0) show v0.1.0.
+ ○​ Severity: Medium — README.md (Results) cites results/cpu-profile.txt and
+    results/mem-profile.txt on a file of 1,000,000 values, and README.md (GenAI Tools)
+    links docs/ai-dialogs/README.md, and scripts/acceptance.sh references
+    scripts/check-inputs.sh, scripts/build.sh, scripts/build-macos-app.sh, and
+    results/machine.txt, none of which are included in this 22-file bundle.
+ ○​ Severity: Low — results/tables.md (machine) records commit: 2304f25, whereas the
+    bundle header lists commit 58db9ca (002-repository-review-bundle.txt).
+ ○​ Suggested change: A check (scripts/acceptance.sh and file existence checks) confirms
+    v1.0.0 is tagged and required in go.mod, results/cpu-profile.txt, results/mem-profile.txt,
+    and docs/ai-dialogs/README.md exist in the repository, and scripts/readme.sh --check
+    passes after v1.0.0 measurement.
+5. Grader friction
+ ●​ Severity: High
+ ○​ Where: go.mod (v0.1.0) vs. README.md (Getting and using the package: @v1.0.0) and
+    ../trimmedmean/README.md (Install: @v1.0.0)
+ ○​ Problem: A grader following the README command go get
+    [github.com/mioluigi/trimmedmean@v1.0.0](https://github.com/mioluigi/trimmedmean@v1
+    .0.0) or inspecting go.mod sees v0.1.0 in go.mod / results/tables.md unless v1.0.0 is
+    tagged, go.mod is updated to v1.0.0, and results/ is re-measured on v1.0.0.
+ ○​ Suggested change: Tag v1.0.0 on
+    [github.com/mioluigi/trimmedmean](https://github.com/mioluigi/trimmedmean), update
+    go.mod to v1.0.0, run go mod tidy / scripts/measure.sh / scripts/readme.sh on the Mac,
+    and verify scripts/acceptance.sh passes (specs/001-trimmed-mean/spec.md §9, AC-8,
+    AC-14).
+ ●​ Severity: Medium
+ ○​ Where: scripts/acceptance.sh (has README.md ... "## Install" "## Use" "## Errors" "##
+    Limits" "## Differences from R" "## Tests" "## Licence") vs. ../trimmedmean/README.md
+    (## Install, ## Use, ## Definition, ## Errors, ## Differences from R, ## Limits, ## Tests, ##
+    Licence)
+ ○​ Problem: scripts/acceptance.sh checks exact substring matches including "## Install"
+    etc. on ../trimmedmean/README.md, which matches those headings, while the
+    go-trimmed-mean-demo check looks for "## Getting and using the package", "##
+    Building", "## Running", "## Testing", "## Results", "## Limits", "## GenAI Tools" in
+    README.md (README.md has ## Getting and using the package, ## Building, ##
+     Running, ## Testing, ## Results, ## Limits, ## GenAI Tools, so those match, but
+     docs/ai-dialogs/ is missing from the bundle).
+  ○​ Suggested change: Ensure docs/ai-dialogs/ and docs/ai-dialogs/README.md are
+     committed and indexed before running scripts/acceptance.sh.
+6. Three changes under 20 minutes each
+  1.​ Tag v1.0.0 on trimmedmean and update go.mod + go.sum in
+      go-trimmed-mean-demo (~10 min): Push the v1.0.0 tag on
+      [github.com/mioluigi/trimmedmean](https://github.com/mioluigi/trimmedmean) after
+      verifying tests pass, update go.mod in go-trimmed-mean-demo to require v1.0.0, and
+      regenerate go.sum on the Mac (specs/001-trimmed-mean/spec.md §9 AC-8, §11 Q6;
+      docs/assignment-and-rubric.md Who runs what).
+  2.​ Re-run measurement and README table sync on v1.0.0 (~10 min): Run
+      scripts/measure.sh and scripts/readme.sh (and scripts/readme.sh --check) on the Mac so
+      results/machine.txt, results/tables.md, and README.md reflect the v1.0.0 release cleanly
+      (specs/001-trimmed-mean/spec.md §9 AC-14).
+  3.​ Run scripts/acceptance.sh on fresh clones and verify docs/ai-dialogs/README.md
+      (~15 min): Confirm docs/ai-dialogs/README.md indexes all dialog files and run
+      ./scripts/acceptance.sh on fresh clones with an empty GOMODCACHE before the 11:59
+      PM ET deadline (specs/001-trimmed-mean/spec.md §9 AC-8, AC-12, AC-13).
+Verdict
+Submit after the listed fixes — the code, tests, R comparison, and documentation are in
+strong shape, and completing the v1.0.0 tag, go.mod/go.sum update, measurement refresh, and
+fresh-clone scripts/acceptance.sh check before 11:59 PM ET will bring all criteria to completion.
+

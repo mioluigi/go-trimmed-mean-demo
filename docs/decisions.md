@@ -5,6 +5,10 @@ were taken under the deadline with Claude's recommendation, for Luis to overturn
 
 ## 2026-11-22
 
+- **Review R2 triaged** (`docs/reviews/002-repository-review.md`): 87/100, *submit after the listed fixes*. Three code
+  fixes made test-first (reference columns by name, empty-scale guard, no stray temporary file), one acceptance
+  check added (profiles), the version items left to T15 as planned, two findings rejected and two inaccurate
+  statements recorded.
 - **Spec, plan and tasks v2 APPROVED by Luis at 18:55 ET, Q1–Q7 as recommended.** The `pre-approval` branch of
   `trimmedmean` (T01–T04 + R1 tests) is merged into `main`.
 - **Review R1 triaged** (`docs/reviews/001-spec-review.md`): 11 accepted or adjusted, 1 rejected after a test
