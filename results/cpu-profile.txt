@@ -1,25 +1,25 @@
 # CPU profile: one run of -data <1,000,000 generated values> -trim 0.05
-Duration: 302.48ms, Total samples = 220ms (72.73%)
-Showing nodes accounting for 220ms, 100% of 220ms total
-Showing top 15 nodes out of 42
+Duration: 303.37ms, Total samples = 230ms (75.82%)
+Showing nodes accounting for 230ms, 100% of 230ms total
+Showing top 15 nodes out of 47
       flat  flat%   sum%        cum   cum%
-      60ms 27.27% 27.27%       70ms 31.82%  slices.partitionOrdered[go.shape.float64]
-      40ms 18.18% 45.45%       40ms 18.18%  syscall.rawsyscalln
-      30ms 13.64% 59.09%       30ms 13.64%  github.com/mioluigi/go-trimmed-mean-demo/internal/sample.parseFloats
-      30ms 13.64% 72.73%       30ms 13.64%  runtime.memmove
-      20ms  9.09% 81.82%       20ms  9.09%  runtime.pthread_cond_wait
-      10ms  4.55% 86.36%       10ms  4.55%  runtime.asyncPreempt
-      10ms  4.55% 90.91%       10ms  4.55%  runtime.typePointers.next
-      10ms  4.55% 95.45%       10ms  4.55%  runtime.usleep
-      10ms  4.55%   100%       10ms  4.55%  slices.insertionSortOrdered[go.shape.float64]
-         0     0%   100%       40ms 18.18%  bufio.(*Scanner).Scan
-         0     0%   100%      110ms 50.00%  github.com/mioluigi/go-trimmed-mean-demo/internal/sample.Read
-         0     0%   100%       80ms 36.36%  github.com/mioluigi/go-trimmed-mean-demo/internal/sample.readValueLines
-         0     0%   100%       80ms 36.36%  github.com/mioluigi/trimmedmean.Mean[go.shape.float64]
-         0     0%   100%       40ms 18.18%  internal/poll.(*FD).Read
-         0     0%   100%       40ms 18.18%  internal/poll.ignoringEINTRIO (inline)
+      80ms 34.78% 34.78%       90ms 39.13%  slices.partitionOrdered[go.shape.float64]
+      50ms 21.74% 56.52%       50ms 21.74%  syscall.rawsyscalln
+      30ms 13.04% 69.57%       30ms 13.04%  github.com/mioluigi/go-trimmed-mean-demo/internal/sample.parseFloats
+      20ms  8.70% 78.26%       20ms  8.70%  runtime.memmove
+      20ms  8.70% 86.96%       20ms  8.70%  runtime.pthread_cond_signal
+      10ms  4.35% 91.30%       10ms  4.35%  cmp.Less[go.shape.float64] (inline)
+      10ms  4.35% 95.65%       10ms  4.35%  runtime.pthread_cond_wait
+      10ms  4.35%   100%       10ms  4.35%  runtime.typePointers.next
+         0     0%   100%       50ms 21.74%  bufio.(*Scanner).Scan
+         0     0%   100%      110ms 47.83%  github.com/mioluigi/go-trimmed-mean-demo/internal/sample.Read
+         0     0%   100%       80ms 34.78%  github.com/mioluigi/go-trimmed-mean-demo/internal/sample.readValueLines
+         0     0%   100%       90ms 39.13%  github.com/mioluigi/trimmedmean.Mean[go.shape.float64]
+         0     0%   100%       50ms 21.74%  internal/poll.(*FD).Read
+         0     0%   100%       50ms 21.74%  internal/poll.ignoringEINTRIO (inline)
+         0     0%   100%      200ms 86.96%  main.main
 # Largest committed sample (data/floats-1000.csv): too short for the CPU sampler (100 Hz); kept to show it
 Type: cpu
-Duration: 202.23ms, Total samples = 0 
+Duration: 202.25ms, Total samples = 0 
 Showing nodes accounting for 0, 0% of 0 total
       flat  flat%   sum%        cum   cum%

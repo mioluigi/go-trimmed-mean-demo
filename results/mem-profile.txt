@@ -1,20 +1,20 @@
 # Memory profile (allocated during the run): same run
-Showing nodes accounting for 158.11MB, 99.68% of 158.61MB total
-Dropped 6 nodes (cum <= 0.79MB)
-Showing top 15 nodes out of 25
+Showing nodes accounting for 157.33MB, 99.24% of 158.54MB total
+Dropped 12 nodes (cum <= 0.79MB)
+Showing top 15 nodes out of 26
       flat  flat%   sum%        cum   cum%
-  122.55MB 77.27% 77.27%   132.55MB 83.57%  github.com/mioluigi/go-trimmed-mean-demo/internal/sample.readValueLines
-      10MB  6.30% 83.57%       10MB  6.30%  bufio.(*Scanner).Text (inline)
-    7.63MB  4.81% 88.38%     7.63MB  4.81%  github.com/mioluigi/go-trimmed-mean-demo/internal/sample.parseFloats
-    7.63MB  4.81% 93.20%     7.63MB  4.81%  github.com/mioluigi/go-trimmed-mean-demo/internal/sample.parseIntegers
-    7.63MB  4.81% 98.01%     7.63MB  4.81%  github.com/mioluigi/trimmedmean.toFloat64[go.shape.float64]
-    1.50MB  0.95% 98.96%     1.50MB  0.95%  runtime.mallocgc
-    1.16MB  0.73% 99.68%     1.16MB  0.73%  runtime/pprof.StartCPUProfile
-         0     0% 99.68%   147.81MB 93.20%  github.com/mioluigi/go-trimmed-mean-demo/internal/sample.Read
-         0     0% 99.68%     7.63MB  4.81%  github.com/mioluigi/trimmedmean.Mean[go.shape.float64]
-         0     0% 99.68%   156.60MB 98.74%  main.main
-         0     0% 99.68%     7.63MB  4.81%  main.meanOf
-         0     0% 99.68%   156.60MB 98.74%  main.run
-         0     0% 99.68%   155.45MB 98.01%  main.runOne
-         0     0% 99.68%     1.16MB  0.73%  main.startProfiles
-         0     0% 99.68%     1.50MB  0.95%  runtime.allocm
+  123.28MB 77.76% 77.76%   131.28MB 82.80%  github.com/mioluigi/go-trimmed-mean-demo/internal/sample.readValueLines
+       8MB  5.05% 82.80%        8MB  5.05%  bufio.(*Scanner).Text (inline)
+    7.63MB  4.81% 87.62%     7.63MB  4.81%  github.com/mioluigi/go-trimmed-mean-demo/internal/sample.parseFloats
+    7.63MB  4.81% 92.43%     7.63MB  4.81%  github.com/mioluigi/go-trimmed-mean-demo/internal/sample.parseIntegers
+    7.63MB  4.81% 97.25%     7.63MB  4.81%  github.com/mioluigi/trimmedmean.toFloat64[go.shape.float64]
+       2MB  1.26% 98.51%        2MB  1.26%  runtime.mallocgc
+    1.16MB  0.73% 99.24%     1.16MB  0.73%  runtime/pprof.StartCPUProfile
+         0     0% 99.24%   146.54MB 92.43%  github.com/mioluigi/go-trimmed-mean-demo/internal/sample.Read
+         0     0% 99.24%     7.63MB  4.81%  github.com/mioluigi/trimmedmean.Mean[go.shape.float64]
+         0     0% 99.24%   155.33MB 97.98%  main.main
+         0     0% 99.24%     7.63MB  4.81%  main.meanOf
+         0     0% 99.24%   155.33MB 97.98%  main.run
+         0     0% 99.24%   154.17MB 97.25%  main.runOne
+         0     0% 99.24%     1.16MB  0.73%  main.startProfiles
+         0     0% 99.24%        2MB  1.26%  runtime.allocm
