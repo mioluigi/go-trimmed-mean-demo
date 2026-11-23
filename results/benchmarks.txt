@@ -2,35 +2,35 @@ goos: darwin
 goarch: arm64
 pkg: github.com/mioluigi/trimmedmean
 cpu: Apple M1 Max
-BenchmarkMean/floats/n=100-10         	  918524	      1121 ns/op	     896 B/op	       1 allocs/op
+BenchmarkMean/floats/n=100-10         	 1061379	      1120 ns/op	     896 B/op	       1 allocs/op
 BenchmarkMean/floats/n=100-10         	 1000000	      1100 ns/op	     896 B/op	       1 allocs/op
+BenchmarkMean/floats/n=100-10         	 1000000	      1103 ns/op	     896 B/op	       1 allocs/op
+BenchmarkMean/floats/n=100-10         	 1000000	      1105 ns/op	     896 B/op	       1 allocs/op
 BenchmarkMean/floats/n=100-10         	 1000000	      1098 ns/op	     896 B/op	       1 allocs/op
-BenchmarkMean/floats/n=100-10         	 1000000	      1096 ns/op	     896 B/op	       1 allocs/op
-BenchmarkMean/floats/n=100-10         	 1000000	      1101 ns/op	     896 B/op	       1 allocs/op
-BenchmarkMean/ints/n=100-10           	 1200286	       999.0 ns/op	     896 B/op	       1 allocs/op
-BenchmarkMean/ints/n=100-10           	 1202095	       998.7 ns/op	     896 B/op	       1 allocs/op
 BenchmarkMean/ints/n=100-10           	 1000000	      1000 ns/op	     896 B/op	       1 allocs/op
-BenchmarkMean/ints/n=100-10           	 1000000	      1000 ns/op	     896 B/op	       1 allocs/op
-BenchmarkMean/ints/n=100-10           	 1000000	      1000 ns/op	     896 B/op	       1 allocs/op
-BenchmarkMean/floats/n=10000-10       	    2074	    574367 ns/op	   81920 B/op	       1 allocs/op
-BenchmarkMean/floats/n=10000-10       	    2096	    572479 ns/op	   81920 B/op	       1 allocs/op
-BenchmarkMean/floats/n=10000-10       	    2091	    576402 ns/op	   81920 B/op	       1 allocs/op
-BenchmarkMean/floats/n=10000-10       	    2098	    574658 ns/op	   81920 B/op	       1 allocs/op
-BenchmarkMean/floats/n=10000-10       	    2094	    573538 ns/op	   81920 B/op	       1 allocs/op
-BenchmarkMean/ints/n=10000-10         	    2529	    469656 ns/op	   81920 B/op	       1 allocs/op
-BenchmarkMean/ints/n=10000-10         	    2566	    468500 ns/op	   81920 B/op	       1 allocs/op
-BenchmarkMean/ints/n=10000-10         	    2546	    476789 ns/op	   81920 B/op	       1 allocs/op
-BenchmarkMean/ints/n=10000-10         	    2538	    471853 ns/op	   81920 B/op	       1 allocs/op
-BenchmarkMean/ints/n=10000-10         	    2538	    470315 ns/op	   81920 B/op	       1 allocs/op
-BenchmarkMean/floats/n=1000000-10     	      13	  88043821 ns/op	 8003584 B/op	       1 allocs/op
-BenchmarkMean/floats/n=1000000-10     	      13	  87865237 ns/op	 8003584 B/op	       1 allocs/op
-BenchmarkMean/floats/n=1000000-10     	      13	  88080125 ns/op	 8003584 B/op	       1 allocs/op
-BenchmarkMean/floats/n=1000000-10     	      13	  87930144 ns/op	 8003584 B/op	       1 allocs/op
-BenchmarkMean/floats/n=1000000-10     	      13	  87922763 ns/op	 8003584 B/op	       1 allocs/op
-BenchmarkMean/ints/n=1000000-10       	      26	  44028768 ns/op	 8003588 B/op	       1 allocs/op
-BenchmarkMean/ints/n=1000000-10       	      26	  44283631 ns/op	 8003588 B/op	       1 allocs/op
-BenchmarkMean/ints/n=1000000-10       	      26	  44086939 ns/op	 8003584 B/op	       1 allocs/op
-BenchmarkMean/ints/n=1000000-10       	      26	  44064760 ns/op	 8003584 B/op	       1 allocs/op
-BenchmarkMean/ints/n=1000000-10       	      26	  44056213 ns/op	 8003584 B/op	       1 allocs/op
+BenchmarkMean/ints/n=100-10           	 1000000	      1003 ns/op	     896 B/op	       1 allocs/op
+BenchmarkMean/ints/n=100-10           	 1000000	      1001 ns/op	     896 B/op	       1 allocs/op
+BenchmarkMean/ints/n=100-10           	 1000000	      1003 ns/op	     896 B/op	       1 allocs/op
+BenchmarkMean/ints/n=100-10           	 1000000	      1002 ns/op	     896 B/op	       1 allocs/op
+BenchmarkMean/floats/n=10000-10       	    2073	    575090 ns/op	   81920 B/op	       1 allocs/op
+BenchmarkMean/floats/n=10000-10       	    2097	    572723 ns/op	   81920 B/op	       1 allocs/op
+BenchmarkMean/floats/n=10000-10       	    2089	    575071 ns/op	   81920 B/op	       1 allocs/op
+BenchmarkMean/floats/n=10000-10       	    2086	    573542 ns/op	   81920 B/op	       1 allocs/op
+BenchmarkMean/floats/n=10000-10       	    2102	    572531 ns/op	   81920 B/op	       1 allocs/op
+BenchmarkMean/ints/n=10000-10         	    2521	    471191 ns/op	   81920 B/op	       1 allocs/op
+BenchmarkMean/ints/n=10000-10         	    2565	    469904 ns/op	   81920 B/op	       1 allocs/op
+BenchmarkMean/ints/n=10000-10         	    2570	    471603 ns/op	   81920 B/op	       1 allocs/op
+BenchmarkMean/ints/n=10000-10         	    2557	    469964 ns/op	   81920 B/op	       1 allocs/op
+BenchmarkMean/ints/n=10000-10         	    2552	    472332 ns/op	   81920 B/op	       1 allocs/op
+BenchmarkMean/floats/n=1000000-10     	      13	  88047612 ns/op	 8003584 B/op	       1 allocs/op
+BenchmarkMean/floats/n=1000000-10     	      13	  87950625 ns/op	 8003584 B/op	       1 allocs/op
+BenchmarkMean/floats/n=1000000-10     	      13	  88050362 ns/op	 8003584 B/op	       1 allocs/op
+BenchmarkMean/floats/n=1000000-10     	      13	  87977122 ns/op	 8003584 B/op	       1 allocs/op
+BenchmarkMean/floats/n=1000000-10     	      13	  87836840 ns/op	 8003584 B/op	       1 allocs/op
+BenchmarkMean/ints/n=1000000-10       	      26	  44079659 ns/op	 8003584 B/op	       1 allocs/op
+BenchmarkMean/ints/n=1000000-10       	      26	  44738284 ns/op	 8003584 B/op	       1 allocs/op
+BenchmarkMean/ints/n=1000000-10       	      26	  44890312 ns/op	 8003584 B/op	       1 allocs/op
+BenchmarkMean/ints/n=1000000-10       	      26	  44065800 ns/op	 8003584 B/op	       1 allocs/op
+BenchmarkMean/ints/n=1000000-10       	      26	  44320976 ns/op	 8003588 B/op	       1 allocs/op
 PASS
-ok  	github.com/mioluigi/trimmedmean	34.540s
+ok  	github.com/mioluigi/trimmedmean	34.369s
