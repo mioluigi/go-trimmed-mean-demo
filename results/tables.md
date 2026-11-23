@@ -13,11 +13,11 @@
 | Benchmark (`trim = 0.05`) | Runs | Median time per call | Memory per call | Allocations |
 |---|---:|---:|---:|---:|
 | floats/n=100 | 5 | 1.10 µs | 896 B | 1 |
-| ints/n=100 | 5 | 1.01 µs | 896 B | 1 |
-| floats/n=10000 | 5 | 576.64 µs | 80.0 KiB | 1 |
-| ints/n=10000 | 5 | 475.85 µs | 80.0 KiB | 1 |
-| floats/n=1000000 | 5 | 88.54 ms | 7.63 MiB | 1 |
-| ints/n=1000000 | 5 | 44.34 ms | 7.63 MiB | 1 |
+| ints/n=100 | 5 | 1.00 µs | 896 B | 1 |
+| floats/n=10000 | 5 | 574.37 µs | 80.0 KiB | 1 |
+| ints/n=10000 | 5 | 470.31 µs | 80.0 KiB | 1 |
+| floats/n=1000000 | 5 | 87.93 ms | 7.63 MiB | 1 |
+| ints/n=1000000 | 5 | 44.06 ms | 7.63 MiB | 1 |
 
 ## comparison
 
@@ -34,13 +34,13 @@
 
 - **84 of 84** comparisons with R agree under the rule of spec §7.
 - At `trim = 0.05`, Go equals R **exactly** on **3 of 3** integer samples; on the float samples the largest difference from R is **2.2e-16**.
-- Slowest benchmark (`floats/n=1000000`): **88.54 ms** per call, **7.63 MiB** allocated in **1** allocation(s).
+- Slowest benchmark (`floats/n=1000000`): **87.93 ms** per call, **7.63 MiB** allocated in **1** allocation(s).
 
 ## machine
 
 ```
-measured: 2026-11-22 18:40 EST
-commit: 3f4e47b
+measured: 2026-11-22 19:36 EST
+commit: 2304f25
 machine: MacBookPro18,2 · Apple M1 Max · 64 GB · macOS 27.2.1
 go: go version go1.27.2 darwin/arm64
 trimmedmean: v0.1.0

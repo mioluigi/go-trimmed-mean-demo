@@ -1,5 +1,5 @@
-measured: 2026-11-22 18:40 EST
-commit: 3f4e47b
+measured: 2026-11-22 19:36 EST
+commit: 2304f25
 machine: MacBookPro18,2 · Apple M1 Max · 64 GB · macOS 27.2.1
 go: go version go1.27.2 darwin/arm64
 trimmedmean: v0.1.0

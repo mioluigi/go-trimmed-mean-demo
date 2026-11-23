@@ -2,35 +2,35 @@ goos: darwin
 goarch: arm64
 pkg: github.com/mioluigi/trimmedmean
 cpu: Apple M1 Max
-BenchmarkMean/floats/n=100-10         	 1048497	      1130 ns/op	     896 B/op	       1 allocs/op
-BenchmarkMean/floats/n=100-10         	 1000000	      1106 ns/op	     896 B/op	       1 allocs/op
-BenchmarkMean/floats/n=100-10         	 1000000	      1105 ns/op	     896 B/op	       1 allocs/op
-BenchmarkMean/floats/n=100-10         	 1000000	      1102 ns/op	     896 B/op	       1 allocs/op
-BenchmarkMean/floats/n=100-10         	 1000000	      1102 ns/op	     896 B/op	       1 allocs/op
-BenchmarkMean/ints/n=100-10           	 1000000	      1004 ns/op	     896 B/op	       1 allocs/op
-BenchmarkMean/ints/n=100-10           	 1000000	      1016 ns/op	     896 B/op	       1 allocs/op
-BenchmarkMean/ints/n=100-10           	 1000000	      1006 ns/op	     896 B/op	       1 allocs/op
-BenchmarkMean/ints/n=100-10           	 1000000	      1008 ns/op	     896 B/op	       1 allocs/op
-BenchmarkMean/ints/n=100-10           	 1000000	      1009 ns/op	     896 B/op	       1 allocs/op
-BenchmarkMean/floats/n=10000-10       	    2080	    576641 ns/op	   81920 B/op	       1 allocs/op
-BenchmarkMean/floats/n=10000-10       	    2085	    576410 ns/op	   81920 B/op	       1 allocs/op
-BenchmarkMean/floats/n=10000-10       	    2097	    577952 ns/op	   81920 B/op	       1 allocs/op
-BenchmarkMean/floats/n=10000-10       	    2092	    575791 ns/op	   81920 B/op	       1 allocs/op
-BenchmarkMean/floats/n=10000-10       	    2080	    579969 ns/op	   81920 B/op	       1 allocs/op
-BenchmarkMean/ints/n=10000-10         	    2510	    478206 ns/op	   81920 B/op	       1 allocs/op
-BenchmarkMean/ints/n=10000-10         	    2523	    477685 ns/op	   81920 B/op	       1 allocs/op
-BenchmarkMean/ints/n=10000-10         	    2530	    473702 ns/op	   81920 B/op	       1 allocs/op
-BenchmarkMean/ints/n=10000-10         	    2506	    475851 ns/op	   81920 B/op	       1 allocs/op
-BenchmarkMean/ints/n=10000-10         	    2530	    474594 ns/op	   81920 B/op	       1 allocs/op
-BenchmarkMean/floats/n=1000000-10     	      13	  88773163 ns/op	 8003584 B/op	       1 allocs/op
-BenchmarkMean/floats/n=1000000-10     	      13	  88528811 ns/op	 8003584 B/op	       1 allocs/op
-BenchmarkMean/floats/n=1000000-10     	      13	  88745455 ns/op	 8003584 B/op	       1 allocs/op
-BenchmarkMean/floats/n=1000000-10     	      13	  88542798 ns/op	 8003584 B/op	       1 allocs/op
-BenchmarkMean/floats/n=1000000-10     	      13	  88475253 ns/op	 8003584 B/op	       1 allocs/op
-BenchmarkMean/ints/n=1000000-10       	      26	  44311296 ns/op	 8003588 B/op	       1 allocs/op
-BenchmarkMean/ints/n=1000000-10       	      26	  44277372 ns/op	 8003584 B/op	       1 allocs/op
-BenchmarkMean/ints/n=1000000-10       	      26	  44374798 ns/op	 8003584 B/op	       1 allocs/op
-BenchmarkMean/ints/n=1000000-10       	      26	  44556994 ns/op	 8003584 B/op	       1 allocs/op
-BenchmarkMean/ints/n=1000000-10       	      26	  44340814 ns/op	 8003588 B/op	       1 allocs/op
+BenchmarkMean/floats/n=100-10         	  918524	      1121 ns/op	     896 B/op	       1 allocs/op
+BenchmarkMean/floats/n=100-10         	 1000000	      1100 ns/op	     896 B/op	       1 allocs/op
+BenchmarkMean/floats/n=100-10         	 1000000	      1098 ns/op	     896 B/op	       1 allocs/op
+BenchmarkMean/floats/n=100-10         	 1000000	      1096 ns/op	     896 B/op	       1 allocs/op
+BenchmarkMean/floats/n=100-10         	 1000000	      1101 ns/op	     896 B/op	       1 allocs/op
+BenchmarkMean/ints/n=100-10           	 1200286	       999.0 ns/op	     896 B/op	       1 allocs/op
+BenchmarkMean/ints/n=100-10           	 1202095	       998.7 ns/op	     896 B/op	       1 allocs/op
+BenchmarkMean/ints/n=100-10           	 1000000	      1000 ns/op	     896 B/op	       1 allocs/op
+BenchmarkMean/ints/n=100-10           	 1000000	      1000 ns/op	     896 B/op	       1 allocs/op
+BenchmarkMean/ints/n=100-10           	 1000000	      1000 ns/op	     896 B/op	       1 allocs/op
+BenchmarkMean/floats/n=10000-10       	    2074	    574367 ns/op	   81920 B/op	       1 allocs/op
+BenchmarkMean/floats/n=10000-10       	    2096	    572479 ns/op	   81920 B/op	       1 allocs/op
+BenchmarkMean/floats/n=10000-10       	    2091	    576402 ns/op	   81920 B/op	       1 allocs/op
+BenchmarkMean/floats/n=10000-10       	    2098	    574658 ns/op	   81920 B/op	       1 allocs/op
+BenchmarkMean/floats/n=10000-10       	    2094	    573538 ns/op	   81920 B/op	       1 allocs/op
+BenchmarkMean/ints/n=10000-10         	    2529	    469656 ns/op	   81920 B/op	       1 allocs/op
+BenchmarkMean/ints/n=10000-10         	    2566	    468500 ns/op	   81920 B/op	       1 allocs/op
+BenchmarkMean/ints/n=10000-10         	    2546	    476789 ns/op	   81920 B/op	       1 allocs/op
+BenchmarkMean/ints/n=10000-10         	    2538	    471853 ns/op	   81920 B/op	       1 allocs/op
+BenchmarkMean/ints/n=10000-10         	    2538	    470315 ns/op	   81920 B/op	       1 allocs/op
+BenchmarkMean/floats/n=1000000-10     	      13	  88043821 ns/op	 8003584 B/op	       1 allocs/op
+BenchmarkMean/floats/n=1000000-10     	      13	  87865237 ns/op	 8003584 B/op	       1 allocs/op
+BenchmarkMean/floats/n=1000000-10     	      13	  88080125 ns/op	 8003584 B/op	       1 allocs/op
+BenchmarkMean/floats/n=1000000-10     	      13	  87930144 ns/op	 8003584 B/op	       1 allocs/op
+BenchmarkMean/floats/n=1000000-10     	      13	  87922763 ns/op	 8003584 B/op	       1 allocs/op
+BenchmarkMean/ints/n=1000000-10       	      26	  44028768 ns/op	 8003588 B/op	       1 allocs/op
+BenchmarkMean/ints/n=1000000-10       	      26	  44283631 ns/op	 8003588 B/op	       1 allocs/op
+BenchmarkMean/ints/n=1000000-10       	      26	  44086939 ns/op	 8003584 B/op	       1 allocs/op
+BenchmarkMean/ints/n=1000000-10       	      26	  44064760 ns/op	 8003584 B/op	       1 allocs/op
+BenchmarkMean/ints/n=1000000-10       	      26	  44056213 ns/op	 8003584 B/op	       1 allocs/op
 PASS
-ok  	github.com/mioluigi/trimmedmean	34.479s
+ok  	github.com/mioluigi/trimmedmean	34.540s
