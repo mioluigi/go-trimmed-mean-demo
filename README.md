@@ -31,9 +31,11 @@ order its partial sort leaves them ([why](#how-the-comparison-with-r-works)).
 | `internal/sample/` | reads a file of numbers (integers or floats) |
 | `internal/compare/` | the rule that decides whether a Go result agrees with R's ([spec §7](specs/001-trimmed-mean/spec.md)) |
 | `cmd/tables/` | turns `results/` into the generated tables of this README |
+| `cmd/bootstrap-study/`, `internal/study/`, `internal/rrand/` | the optional bootstrap study: the course's `run-bootstrap-robust.R` reproduced in Go draw for draw, with R's random numbers ([below](#bootstrap-study-optional-step-s8)) |
 | `data/` | the six samples: 100, 101 and 1,000 integers; 100, 101 and 1,000 floats (`MANIFEST.tsv`: size, SHA-256, seed) |
 | `r/capture-reference.R` | the R script that generated the samples and R's results (seed 9431) |
 | `testdata/r-reference/` | R's saved results: 84 trimmed means, R's behaviour at the edges, the doubles R read, the R session |
+| `testdata/bootstrap-reference/`, `r/capture-bootstrap-reference.R` | R's results for the bootstrap study, from the course file run unchanged on the Mac (the course file itself is not committed) |
 | `results/` | the official run on the Mac: the comparison, benchmarks, profiles, machine, generated tables |
 | `scripts/` | build, `.app`, data gate, measurement, README tables, acceptance, review bundle, R capture |
 | `docs/`, `specs/` | assignment and rubric, constitution, spike, spec, plan, tasks, reviews, decisions, AI dialogs |
@@ -164,8 +166,10 @@ scripts/acceptance.sh            # every acceptance criterion, on fresh clones o
   `cmd/tables` the generated tables, including a stale README.
 - The package's own tests ([trimmedmean](https://github.com/mioluigi/trimmedmean#tests)) include the same 84
   R results, examples, a fuzz test and benchmarks.
-- [`docs/mutation-checks.txt`](docs/mutation-checks.txt): 24 deliberate defects in the package and the
-  program; the tests caught all 24.
+- [`docs/mutation-checks.txt`](docs/mutation-checks.txt): deliberate defects in the package, the program and
+  the bootstrap study; the tests caught every one.
+- `internal/rrand`, `internal/study`: R's random draws, the course study's 400 rows and 16 standard errors, and
+  its printed output, all against R's saved values.
 
 To regenerate R's results (needs R; changes the committed samples only if the R script changes):
 `scripts/capture-r.sh`.
@@ -233,6 +237,46 @@ trimmedmean: v1.0.0
 R reference: R version 4.4.2 (2024-10-31), aarch64-apple-darwin20
 ```
 <!-- END generated:machine -->
+
+## Bootstrap study (optional step S8)
+
+The assignment's optional step asks for a bootstrap study showing the value of the trimmed mean as a robust
+estimator, based on the course file `run-bootstrap-robust.R` (Thomas W. Miller, May 23, 2024). Rather than
+write a new study, **`cmd/bootstrap-study` reproduces the course's study in Go, draw for draw**, with the
+trimmed mean computed by this package, and checks every result against R
+([spec 002](specs/002-bootstrap-study/spec.md)).
+
+```bash
+go run ./cmd/bootstrap-study            # the course's settings: B = 100; prints what the course prints
+go run ./cmd/bootstrap-study -B 1000    # more resamples (2 to 10,000)
+```
+
+The study draws 100 samples at each size n = 25, 100, 225, 400 from a population with **1% outliers**
+(normal with mean 100 and SD 10, contaminated by values near 200), and bootstraps each sample B times.
+
+<!-- BEGIN generated:bootstrap -->
+<!-- END generated:bootstrap -->
+
+**Reading it.** With even 1% outliers, the standard error of the mean rises well above what the Central
+Limit Theorem gives for a clean sample, because an outlier in a sample pulls the mean far. A 5% trimmed mean
+removes those few extreme values, so its standard error stays close to the clean-sample value; it is also
+below the median's, because the median discards far more of the data. At the smallest size the median can
+do better by the course's measure. That is the case for the trimmed mean: most of the mean's efficiency, most
+of the median's robustness.
+
+**Two things found by reading the course file** (spec 002 §6). Its "bootstrap" standard errors are the
+standard deviation, over the 100 samples, of each statistic **averaged over its B resamples**, which is close
+to the statistic's own sampling variability rather than the usual bootstrap estimate from one sample; so the
+second table adds the usual estimate (the spread of each sample's B values), computed in Go only because the
+course file does not keep those values. And its comment says the seed is set inside the loop, while the code
+sets it once before the loops; the study is reproducible either way.
+
+**How Go gets R's random numbers.** `internal/rrand` reuses the Week 8 generator, which reproduces R's
+`set.seed`, `runif` and `sample` exactly, and adds R's `rnorm`: R's default method draws two uniforms and
+inverts the normal distribution with Wichura's algorithm AS 241. It was checked bit for bit against Python's
+pure-Python AS 241 on 3,998 probabilities and against R's own draws; the checks found one coefficient
+transposed in the first draft, and that Go's `math.Log` can be one unit in the last place away from the C
+library's correctly rounded `log` that R uses, so the tail uses a correctly rounded logarithm.
 
 ## How the comparison with R works
 

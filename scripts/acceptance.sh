@@ -77,7 +77,11 @@ check "results were measured with trimmedmean $version" has results/machine.txt 
 check "CPU and memory profiles of the 1,000,000-value run are committed (NFR-3)" sh -c \
   'test -s results/cpu.prof -a -s results/mem.prof && grep -q "1,000,000" results/cpu-profile.txt && grep -q "same run" results/mem-profile.txt'
 check "program README: get and use the package, build, run, test, results, limits, GenAI Tools (FR-13, AC-13)" \
-  has README.md "go get github.com/mioluigi/trimmedmean@$version" "## Getting and using the package" "## Building" "## Running" "## Testing" "## Results" "## Limits" "## GenAI Tools"
+  has README.md "go get github.com/mioluigi/trimmedmean@$version" "## Getting and using the package" "## Building" "## Running" "## Testing" "## Results" "## Bootstrap study" "## Limits" "## GenAI Tools"
+check "bootstrap study: Go reproduces R's draws, 400 rows, 16 standard errors and listing (spec 002 AC-B1..B3)" \
+  says "ok" offline go test -count=1 -run 'MatchesR|Rnorm|Mixture|Listing' ./internal/rrand ./internal/study
+check "bootstrap study: the command prints the course's listing; results/bootstrap-study.tsv committed (AC-B6)" sh -c \
+  'go run ./cmd/bootstrap-study -out "$0/bs.tsv" 2>/dev/null | grep -q "Run Complete" && test -s results/bootstrap-study.tsv' "$work"
 check "AI dialogs are indexed: docs/ai-dialogs/README.md lists every file there (AC-13)" sh -c \
   'test -s docs/ai-dialogs/README.md && for f in docs/ai-dialogs/*; do n="$(basename "$f")"; [ "$n" = README.md ] || grep -q -F "$n" docs/ai-dialogs/README.md || { echo "not indexed: $n"; exit 1; }; done'
 

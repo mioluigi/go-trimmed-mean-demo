@@ -22,15 +22,16 @@ func main() {
 	results := flag.String("results", "results", "folder of saved results")
 	readme := flag.String("readme", "README.md", "README whose generated blocks are replaced")
 	check := flag.Bool("check", false, "only check that the README is up to date")
+	bootstrapReference := flag.String("bootstrap-reference", "testdata/bootstrap-reference/standard-errors.tsv", "R's standard errors for the bootstrap study")
 	flag.Parse()
-	if err := run(*results, *readme, *check); err != nil {
+	if err := run(*results, *readme, *bootstrapReference, *check); err != nil {
 		fmt.Fprintln(os.Stderr, "tables:", err)
 		os.Exit(1)
 	}
 }
 
-func run(resultsDir, readmePath string, check bool) error {
-	blocks, err := buildBlocks(resultsDir)
+func run(resultsDir, readmePath, bootstrapReference string, check bool) error {
+	blocks, err := buildBlocks(resultsDir, bootstrapReference)
 	if err != nil {
 		return err
 	}
@@ -56,7 +57,7 @@ func run(resultsDir, readmePath string, check bool) error {
 }
 
 // buildBlocks renders every generated block from the saved results.
-func buildBlocks(resultsDir string) (map[string]string, error) {
+func buildBlocks(resultsDir, bootstrapReference string) (map[string]string, error) {
 	comparisons, err := readComparisons(filepath.Join(resultsDir, "comparison.tsv"))
 	if err != nil {
 		return nil, err
@@ -69,12 +70,17 @@ func buildBlocks(resultsDir string) (map[string]string, error) {
 	if err != nil {
 		return nil, err
 	}
+	bootstrap, err := bootstrapBlock(filepath.Join(resultsDir, "bootstrap-study.tsv"), bootstrapReference)
+	if err != nil {
+		return nil, err
+	}
 	return map[string]string{
 		"headline":   renderHeadline(comparisons, benchmarks),
 		"comparison": renderComparison(comparisons),
 		"agreement":  renderAgreement(comparisons),
 		"benchmarks": renderBenchmarks(benchmarks),
 		"machine":    "```\n" + strings.TrimSpace(string(machine)) + "\n```\n",
+		"bootstrap":  bootstrap,
 	}, nil
 }
 
@@ -108,4 +114,17 @@ func allBlocks(blocks map[string]string) string {
 		fmt.Fprintf(&text, "\n## %s\n\n%s", name, blocks[name])
 	}
 	return text.String()
+}
+
+// bootstrapBlock renders the bootstrap study (spec 002) from Go's results and R's reference.
+func bootstrapBlock(goPath, rPath string) (string, error) {
+	goRows, err := readBootstrap(goPath)
+	if err != nil {
+		return "", err
+	}
+	rRows, err := readBootstrap(rPath)
+	if err != nil {
+		return "", err
+	}
+	return renderBootstrap(goRows, rRows)
 }

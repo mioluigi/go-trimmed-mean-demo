@@ -43,6 +43,12 @@ awk 'BEGIN { srand(431); print "value"; for (i = 0; i < 1000000; i++) printf "%.
 { echo "# Memory profile (allocated during the run): same run"; go tool pprof -top -sample_index=alloc_space -nodecount=15 "$work/trimmed-mean-demo" results/mem.prof 2>/dev/null | sed '/^File:/d;/^Build ID:/d;/^Type:/d;/^Time:/d'; } > results/mem-profile.txt
 { echo "# Largest committed sample ($largest): too short for the CPU sampler (100 Hz); kept to show it"; go tool pprof -top -nodecount=5 "$work/trimmed-mean-demo" results/cpu-largest-sample.prof 2>/dev/null | sed '/^File:/d;/^Build ID:/d;/^Time:/d'; } >> results/cpu-profile.txt
 
+echo "measure: step 3b: bootstrap study (spec 002)"
+go build -o "$work/bootstrap-study" ./cmd/bootstrap-study
+"$work/bootstrap-study" -out results/bootstrap-study.tsv > results/bootstrap-study-run.txt 2> "$work/bootstrap-log.txt" \
+  || { cat "$work/bootstrap-log.txt"; fail "the bootstrap study failed."; }
+sed -E 's/^time=[^ ]+ //' "$work/bootstrap-log.txt" > results/bootstrap-study-log.txt
+
 echo "measure: step 4 of 5: machine"
 {
   echo "measured: $(date '+%Y-%m-%d %H:%M %Z')"
