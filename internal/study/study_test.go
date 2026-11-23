@@ -43,3 +43,13 @@ func TestRunShapeAndConfig(t *testing.T) {
 		t.Error("empty configuration accepted")
 	}
 }
+
+// TestAverageReversedFollowsRbind pins the course's order: rbind(new, old) puts the last replicate first,
+// and R averages the column in that order. On the course's data both orders give the same bits (mutation
+// B7 survived there), so this uses values whose two-pass mean depends on the order.
+func TestAverageReversedFollowsRbind(t *testing.T) {
+	values := []float64{0.6306259157317371, 0.09477089424570057, 0.05855414226403868, 9762551055929200, 5566648979370926}
+	if got := averageReversed(values); got != 3065840007060025.5 {
+		t.Fatalf("averageReversed = %.17g, want 3065840007060025.5 (the reversed order; in the given order it is 3065840007060025)", got)
+	}
+}

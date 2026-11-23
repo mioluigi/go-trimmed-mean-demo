@@ -104,6 +104,22 @@ symmetric doubles must equal **R's full-sort mean exactly** and R's built-in wit
 kept value** (20 times the measured worst gap). Reproducing R's partial sort is not worth tying the package to
 R's internals for gaps of about two epsilons (Q7).
 
+## Addendum C (2026-11-22 20:55): the bootstrap study's R reference (spec 002)
+
+Evidence: commit `6ad3eb8` (`testdata/bootstrap-reference/`, the course file run unchanged on the Mac, its
+SHA-256 `5bbf5a00…` in the manifest), tests in `internal/rrand` and `internal/study`.
+
+| Prediction or question | Outcome |
+|---|---|
+| Go's `rnorm` by inversion reproduces R's draws | **Held, bit for bit**: 5,000 of 5,000 draws and 2,000 of 2,000 mixture draws, with **unfused** arithmetic; the fused form would have matched only 2,559 of 5,000, so R's compiled `qnorm` does not fuse multiply-adds |
+| Two defects found before R's data arrived, by Python's independent AS 241 | one coefficient transposed from memory; Go's `math.Log` one ULP from the C library's correctly rounded `log` in the tail (4 of 4 sampled values) — both fixed |
+| The study reproduces R | **Held**: all 400 rows identical in the sample-mean, bootstrap-mean and median columns; the trimmed-mean column within 1.4 × 10⁻¹⁶ relative (R's partial sort, as in spec 001); the printed listing identical character for character |
+| spec 002 §6.3: the trimmed mean's SE is below the mean's at every n, and near or below the median's from n = 100 | **Held** (the README's generated table) |
+
+Small defect found in our own capture script: its manifest listed `MANIFEST.tsv` itself, hashed while being
+written. Harmless (the other seven hashes are of the final files); the script now skips it, and the committed
+manifest is left as captured rather than edited by hand.
+
 ## 5. Pre-mortem: "It is after midnight and this project failed. Why?"
 
 | # | Cause | Guard |

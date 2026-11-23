@@ -23,6 +23,7 @@ Rscript r/capture-bootstrap-reference.R "$course"
   printf 'file\tbytes\tsha256\n'
   printf 'course file run-bootstrap-robust.R (not committed)\t%s\t%s\n' "$(wc -c < "$course" | tr -d ' ')" "$(sha256_of "$course")"
   for path in "$out"/*; do
+    [ "$(basename "$path")" = MANIFEST.tsv ] && continue   # not itself (it is being written)
     printf '%s\t%s\t%s\n' "$(basename "$path")" "$(wc -c < "$path" | tr -d ' ')" "$(sha256_of "$path")"
   done
 } > "$out/MANIFEST.tsv"

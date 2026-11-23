@@ -5,6 +5,9 @@ were taken under the deadline with Claude's recommendation, for Luis to overturn
 
 ## 2026-11-22
 
+- **Spec 002 (bootstrap study) approved by Luis at ~20:30 ET, as recommended (with the textbook column).** R's
+  reference captured from the course file run unchanged (`6ad3eb8`); the course file is not committed. Spike
+  001 addendum C records the results; `scripts/capture-bootstrap-r.sh` no longer lists its own manifest.
 - **Review R2 triaged** (`docs/reviews/002-repository-review.md`): 87/100, *submit after the listed fixes*. Three code
   fixes made test-first (reference columns by name, empty-scale guard, no stray temporary file), one acceptance
   check added (profiles), the version items left to T15 as planned, two findings rejected and two inaccurate

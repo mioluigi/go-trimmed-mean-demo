@@ -167,7 +167,8 @@ scripts/acceptance.sh            # every acceptance criterion, on fresh clones o
 - The package's own tests ([trimmedmean](https://github.com/mioluigi/trimmedmean#tests)) include the same 84
   R results, examples, a fuzz test and benchmarks.
 - [`docs/mutation-checks.txt`](docs/mutation-checks.txt): deliberate defects in the package, the program and
-  the bootstrap study; the tests caught every one.
+  the bootstrap study; the tests caught every one that can change a result. One cannot (`>` for `>=` against a
+  uniform draw that never equals 0.01 exactly) and is recorded as such.
 - `internal/rrand`, `internal/study`: R's random draws, the course study's 400 rows and 16 standard errors, and
   its printed output, all against R's saved values.
 

@@ -35,3 +35,16 @@ caught    P9 ULP distance wrong for negative numbers   by: TestULPDistance
 
 Result: 24 behavioural mutants, 24 caught, 0 survived. M15 was first written as 'return false', which only
 failed to compile (unused variable); it was rewritten and then caught.
+
+# Bootstrap study (spec 002, AC-B5), program 6ad3eb8 + R reference tests
+caught    B1 one qnorm coefficient changed in its 15th digit   by: TestNormalMatchesRnorm,TestQuantileMatchesIndependentAS241
+caught    B2 inversion from one uniform instead of two   by: TestListingMatchesR,TestMixtureDrawsMatchR,TestNormalMatchesRnorm,TestStudyMatchesR
+caught    B3 Go's math.Log instead of the correctly rounded log   by: TestNormalMatchesRnorm,TestQuantileMatchesIndependentAS241
+caught    B4 fused multiply-adds   by: TestMixtureDrawsMatchR,TestNormalMatchesRnorm,TestStudyMatchesR
+caught    B5 median of an even sample takes one middle value   by: TestMedianLikeR,TestStudyMatchesR
+caught    B6 trimming proportion doubled   by: TestListingMatchesR,TestStudyMatchesR
+SURVIVED  B7 rbind's reversed order ignored  -> equivalent on the course's data (both orders give the same bits for all 1,200 averages); a unit test with order-sensitive values was added, then: caught by TestAverageReversedFollowsRbind
+SURVIVED  B8 outlier test > instead of >=  -> equivalent: differs only if a uniform equals 0.01 exactly, which R's generator does not produce here; not catchable by any data, kept as >= to match the course file
+caught    B9 sd without squares   by: TestListingMatchesR,TestSDLikeR,TestStudyMatchesR
+
+Bootstrap result: 9 mutants, 8 caught, 1 equivalent (B8).
