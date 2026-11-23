@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| Status | **DRAFT v1** (2026-11-22 20:35 ET), for Luis's approval; no R1 review (deadline mode: R2-style evidence instead, see §7) |
+| Status | **v1 — APPROVED** by Luis, ~20:30 ET (as recommended) · **all ACs met** 21:00 ET: `results/acceptance-mac.txt` (26/26 on fresh clones), official run at `600cbde` |
 | Governs by | `docs/constitution.md`; spec 001 stays unchanged and approved |
 | Source of the design | the course file `run-bootstrap-robust.R` (Thomas W. Miller, revised May 23, 2024), given by Luis; Luis's listing of a run with B = 100 (`listing-from-100-run-bootstrap-robust.txt`) |
 
@@ -74,6 +74,12 @@ statistical study — and uses the package where an analyst would.
 | AC-B4 | `rrand`'s Week 8 tests pass unchanged in this repository | `go test` |
 | AC-B5 | Mutation check: `qnorm` coefficient, inversion step, median for even n, trimming proportion — all caught | `docs/mutation-checks.txt` addendum |
 | AC-B6 | spec 001's acceptance still passes, plus the study's checks | `scripts/acceptance.sh` on fresh clones |
+
+**Acceptance status (2026-11-22 21:00 ET): AC-B1 … AC-B6 met.** AC-B1: 5,000 + 2,000 draws identical to R's on the
+Mac. AC-B2: 400 rows (mean and median columns identical, trimmed within 1.4e-16), 16 SEs within 2e-15. AC-B3:
+the official run's listing equals R's character for character. AC-B4: Week 8's `rrand` tests pass here. AC-B5:
+9 mutants, 8 caught, 1 equivalent. AC-B6: acceptance 26/26. The first Mac acceptance failed AC-B1/B2 on
+arm64 fusion; fixed (spike 001 addendum D) before this run.
 
 Under the deadline, no third Gemini review is planned: the evidence is the R comparison itself, the mutation
 check and acceptance. If time remains after acceptance, a short Gemini review of this addendum is optional.

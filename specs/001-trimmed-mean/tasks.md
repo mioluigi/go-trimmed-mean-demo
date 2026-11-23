@@ -22,5 +22,8 @@ Status: **v2 — APPROVED** by Luis, 2026-11-22 18:55 ET · **T00–T15 done** (
 | ✅ T14 | C | Program README with generated blocks; GenAI Tools; re-check every sentence (AC-13, 14) | `readme.sh --check` | demo |
 | ✅ T15a | C | R2 fixes: reference columns by name, empty-scale guard, no stray temporary file, profile acceptance check | tests red → green | demo |
 | ✅ T15 | M | Tag `v1.0.0`, move the program to it, acceptance on fresh clones of both repositories (AC-7, 8, 12, 13, 15, 16) | `acceptance.sh`: all PASS | both |
+| ✅ T20 | M | Spec 002: R reference for the bootstrap study (course file run unchanged) | 400 rows, manifest | demo |
+| ✅ T21–T24 | C | Spec 002: R's `rnorm` in Go, the study, README table, measurement, R tests, mutation check | tests vs R | demo |
+| ✅ T25–T26 | M/C | Spec 002: official run; arm64 fusion fix; run and acceptance repeated (26/26) | `results/acceptance-mac.txt` | demo |
 | T16 | M | Export AI dialogs to `docs/ai-dialogs/` + index | files present | demo |
-| — | C/M | *(Deferred, optional)* S8 bootstrap study, only after T16 | — | demo |
+| ✅ — | C/M | S8 bootstrap study: done as spec 002 (T20–T26) | — | demo |
