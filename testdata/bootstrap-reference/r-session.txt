@@ -1,0 +1,6 @@
+R: R version 4.4.2 (2024-10-31)
+platform: aarch64-apple-darwin20
+RNGkind: Mersenne-Twister / Inversion / Rejection
+B: 100
+iterations rows: 400
+captured: 2026-11-22 20:49 EST

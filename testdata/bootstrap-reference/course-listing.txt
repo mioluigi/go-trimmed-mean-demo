@@ -1,0 +1,41 @@
+
+Running study with 100 bootstrap samples
+
+Study conditions:
+  Main population mean: 100 SD: 10
+  Outlier mean: 200 SD: 1
+  Probability of outliers: 0.01 
+
+Trimmed mean computed with trimming proportion 0.05 
+
+Estimated standard errors using 100 bootstrap samples
+
+Samples of size n = 25
+  SE Mean from Central Limit Theorem (assuming no outliers): 2
+  SE Mean from Samples (with outliers): 2.64
+  SE Mean from Bootstrap Samples (with outliers): 2.65
+  SE Median from Bootstrap Samples (with outliers): 2.17
+  SE Trimmed Mean from Bootstrap Samples (with outliers): 2.25
+
+Samples of size n = 100
+  SE Mean from Central Limit Theorem (assuming no outliers): 1
+  SE Mean from Samples (with outliers): 1.41
+  SE Mean from Bootstrap Samples (with outliers): 1.42
+  SE Median from Bootstrap Samples (with outliers): 1.11
+  SE Trimmed Mean from Bootstrap Samples (with outliers): 1.02
+
+Samples of size n = 225
+  SE Mean from Central Limit Theorem (assuming no outliers): 0.67
+  SE Mean from Samples (with outliers): 0.91
+  SE Mean from Bootstrap Samples (with outliers): 0.91
+  SE Median from Bootstrap Samples (with outliers): 0.72
+  SE Trimmed Mean from Bootstrap Samples (with outliers): 0.63
+
+Samples of size n = 400
+  SE Mean from Central Limit Theorem (assuming no outliers): 0.5
+  SE Mean from Samples (with outliers): 0.75
+  SE Mean from Bootstrap Samples (with outliers): 0.75
+  SE Median from Bootstrap Samples (with outliers): 0.68
+  SE Trimmed Mean from Bootstrap Samples (with outliers): 0.57
+
+----- Run Complete -----
