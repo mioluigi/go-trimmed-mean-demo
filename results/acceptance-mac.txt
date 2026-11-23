@@ -38,10 +38,12 @@ PASS  trim 0.6: exit 2 (AC-10)
 PASS  build scripts make the macOS binaries, the Windows .exe and the .app (AC-12)
 PASS  README's generated blocks match results/ (AC-14)
 PASS  results/comparison.tsv: every row PASS
-PASS  what was measured is what is submitted: no code or data change since commit 7862922
+PASS  what was measured is what is submitted: no code or data change since commit 600cbde
 PASS  results were measured with trimmedmean v1.0.0
 PASS  CPU and memory profiles of the 1,000,000-value run are committed (NFR-3)
 PASS  program README: get and use the package, build, run, test, results, limits, GenAI Tools (FR-13, AC-13)
+PASS  bootstrap study: Go reproduces R's draws, 400 rows, 16 standard errors and listing (spec 002 AC-B1..B3)
+PASS  bootstrap study: the command prints the course's listing; results/bootstrap-study.tsv committed (AC-B6)
 PASS  AI dialogs are indexed: docs/ai-dialogs/README.md lists every file there (AC-13)
 
-acceptance: 24 passed, 0 failed
+acceptance: 26 passed, 0 failed
