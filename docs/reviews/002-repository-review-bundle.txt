@@ -1,0 +1,2447 @@
+REVIEW BUNDLE: 22 files, from commit 58db9ca
+  - docs/assignment-and-rubric.md
+  - specs/001-trimmed-mean/spec.md
+  - README.md
+  - results/tables.md
+  - docs/mutation-checks.txt
+  - docs/reviews/001-spec-review.md
+  - go.mod
+  - main.go
+  - comparison.go
+  - internal/compare/compare.go
+  - internal/sample/sample.go
+  - main_test.go
+  - scripts/acceptance.sh
+  - ../trimmedmean/README.md
+  - ../trimmedmean/go.mod
+  - ../trimmedmean/trimmedmean.go
+  - ../trimmedmean/trimmedmean_test.go
+  - ../trimmedmean/reference_test.go
+  - ../trimmedmean/counts_test.go
+  - ../trimmedmean/example_test.go
+  - ../trimmedmean/fuzz_test.go
+  - ../trimmedmean/quality_test.go
+
+===== FILE: docs/assignment-and-rubric.md =====
+# Assignment Requirements and Rubric (summary)
+
+> Summary of the Week 9 assignment, *Create a Go Package* (100 points, due **2026-11-22, 11:59 PM ET**,
+> confirmed by Luis from Canvas at 17:27 ET; assignment page revised March 13, 2025), in our own words, so
+> every tool and reviewer can check the spec against it. The Canvas page is the authoritative source.
+
+## Scenario
+
+A **Go consulting firm** wants to promote its services by publishing **open-source Go packages on GitHub**.
+Its first offering is a package that computes a **symmetric or asymmetric trimmed mean**.
+
+## Required steps (numbered for traceability)
+
+| # | Step | Source wording, condensed |
+|---|---|---|
+| S1 | Create a **Go package** for the trimmed mean in **its own GitHub repository**, following the tutorialspoint instructions | "Follow these instructions for creating a Go package" (<https://www.tutorialspoint.com/article/how-to-create-your-own-package-in-golang>; mapping in spike 001 §2) |
+| S2 | A function that takes a **slice of integers and/or floats** and computes a trimmed mean; the trimming arguments are **proportions** taken from the lower and upper ends **after sorting** from lowest to highest | "read a slice of integers and/or floats and compute a trimmed mean" |
+| S3 | **Asymmetric trimming**: different proportions from the lower and upper ends | "different proportions of trimming are possible" |
+| S4 | With **one** trimming argument, trimming is **symmetric** | "If only one degree-of-trimming argument is provided, assume … symmetric" |
+| S5 | A **second GitHub repository** whose **`main.go` imports the package** and uses it to compute a trimmed mean | "Develop a main.go program that imports the trimmed mean package" |
+| S6 | Using samples of **at least 100 integers and 100 floats**, test the Go function against R's **`mean(x, trim = 0.05)`** (symmetric, 0.05 from each end) | "test the Go trimmed mean function against symmetric trimming results from … R" |
+| S7 | The second repository's README gives **complete instructions for getting and using the package** in a Go program, and **summarises Go results against R's** | "provide complete instructions for getting and using the package … Summarize results" |
+| S8 | *(Optional)* A **bootstrap study** showing the value of the trimmed mean as a robust estimator of central tendency (course file `run-bootstrap-robust.R`) | "(Optional) Run a bootstrap study" |
+| S9 | Submit **both repository URLs** in the Canvas comments; a **README.md in each** repository with instructions for getting, using, running and testing; **GenAI Tools** section with conversation logs | deliverables |
+
+The page also suggests using the **same random number generator** across R and Go (Mersenne Twister,
+`github.com/seehuhn/mt19937`) for Monte Carlo work. It applies to S8 only.
+
+## Deliverables
+
+- Two GitHub URLs in the Canvas comments: the **package** repository and the **example program** repository.
+- A `README.md` in each: roles of programs and data, how to get, use, run and test.
+- **GenAI Tools** section and conversation logs (plain text, PDFs or links).
+
+## Rubric: five criteria, 20 points each
+
+Ratings per criterion: Outstanding 20 (all criteria) · Meets 15 (most) · Needs Improvement 10 · Partially
+Acceptable 5 · Unacceptable 0.
+
+| Tag | Criterion | What earns full marks |
+|---|---|---|
+| **[C]** | Coding rules, organization, aesthetics | Go modules, idiomatic Go; meaningful, specific names; no useless temporaries; clean blocks; small functions; simple control flow; distribute the NOT; self-documenting code with comments explaining the logic (McConnell 2004, 777–817). |
+| **[T]** | Testing and software metrics | Unit tests of critical components with synthetic data; logs and profiles where appropriate; memory and processing requirements monitored; Monte Carlo benchmark if required (here: optional, S8). |
+| **[D]** | Design and development | Clean, efficient design meeting every requirement and the use case; general-purpose, reusable modules. |
+| **[Doc]** | Documentation | Effective Git/GitHub; a README.md **for each repository** noting the roles of programs and data and how to test and use. |
+| **[A]** | Application | Instructions for creating an executable (`.exe` for Windows, `.app` for macOS); runs to completion; **validates user input** with an explanation for incorrect input; clean UX/UI. |
+
+## Who runs what
+
+| Task | Where | Why |
+|---|---|---|
+| Documents, spikes in Go, tests, package and program code, scripts, review bundles, triage | **Claude** (workspace) | Go 1.24.7; GitHub read and push once attached |
+| Creating the two repositories on github.com | **Mac** (Luis) | Only Luis can create them |
+| Environment probe, R reference capture, data generation in R | **Mac** | The workspace has no R |
+| Tagging the package release; `go get` and `go.sum` for the program | **Mac** | The workspace cannot reach `proxy.golang.org` / `sum.golang.org` (probed 2026-11-22, HTTP 403) |
+| Measurement, `.app` build, final acceptance on fresh clones | **Mac** | Official machine |
+| Gemini reviews R1 and R2; exporting AI dialogs; submission | **Luis** | Owner |
+
+===== FILE: specs/001-trimmed-mean/spec.md =====
+# Spec 001: Trimmed mean package and demonstration program
+
+| Field | Value |
+|---|---|
+| Status | **v2 — APPROVED** by Luis, 2026-11-22 18:55 ET (Q1–Q7 as recommended) |
+| Repositories | `github.com/mioluigi/trimmedmean` (package) · `github.com/mioluigi/go-trimmed-mean-demo` (program, documents) |
+| Governs by | `docs/constitution.md`; traced to `docs/assignment-and-rubric.md` (S1–S9, [C][T][D][Doc][A]) |
+| Evidence | `docs/spikes/001-environment-and-r-reference.md`; R reference in `testdata/r-reference/` (Mac part of the spike) |
+
+## 1. Problem
+
+A Go consulting firm wants a first open-source package to show its craft: a **trimmed mean**, symmetric or
+asymmetric, that any Go program can fetch with `go get` and trust. "Trust" means two things here: it agrees
+with the reference implementation analysts already use (R's `mean(x, trim)`), and it refuses inputs where a
+trimmed mean is undefined or misleading instead of returning a quiet wrong number.
+
+## 2. Users
+
+| User | Needs |
+|---|---|
+| **Go developer** (the firm's prospective client) | `go get` one module with no dependencies; one obvious function; clear errors; documentation with runnable examples |
+| **Analyst moving from R** | Same answer as `mean(x, trim)` for symmetric trimming, and a written list of where the package deliberately differs |
+| **Grader** | Two repositories, a README in each, instructions to get, use, build, run and test, and the Go-versus-R comparison |
+
+## 3. Definitions
+
+- **Proportions.** `low` and `high` are the proportions of the **sorted** observations removed from the lower
+  and upper ends.
+- **Counts.** For `n` observations: `dropLow = floor(n × low)`, `dropHigh = floor(n × high)`, computed in
+  float64 exactly as R computes `floor(n * trim)`, so that `n = 100, trim = 0.29` drops 28 (spike P1).
+- **Trimmed mean.** The arithmetic mean of `sorted[dropLow : n − dropHigh]`, computed **as R computes it**
+  (spike addendum B): for **integer** types, one sum (exact below 2^53) divided by the count; for **float**
+  types, R's two-pass mean (the first estimate plus the mean of the deviations from it), and, if the first
+  sum overflows, R's fallback of adding each value divided by the count. When nothing is trimmed, the values
+  are averaged in their given order, without sorting, as R does.
+- **Symmetric** when only one proportion is given: `low = high = trim`. With `low = high`, this is R's
+  `mean(x, trim)`. **Asymmetric** when two are given; R has no built-in, so this is **our** definition,
+  evaluated in R the same way for cross-checking (spike §3).
+
+## 4. Functional requirements — package (`trimmedmean`)
+
+| ID | Requirement | Steps |
+|---|---|---|
+| FR-1 | `func Mean[T Number](values []T, proportions ...float64) (float64, error)`, where `Number` is every Go integer and floating-point type (including named types based on them). | S1, S2 |
+| FR-2 | No proportion → the ordinary (untrimmed) mean; one → symmetric; two → `low`, `high`; more than two → `ErrProportionCount`. | S3, S4 |
+| FR-3 | `values` is never modified; the function sorts a copy. | S2 |
+| FR-4 | Errors are sentinel values usable with `errors.Is`: `ErrEmpty` (no values), `ErrNaN` (a NaN value), `ErrProportion` (a proportion that is NaN, negative, or not below 0.5), `ErrProportionCount`, `ErrNotFinite` (the **result** is NaN or infinite even after R's overflow fallback, e.g. `+Inf` and `−Inf` both kept; infinite **values** are accepted when they are trimmed away or the result is finite). Each package error message names the offending value or index (`trimmedmean: trim proportion must be in [0, 0.5): got 0.6`). | S2 |
+| FR-5 | Because each proportion is below 0.5, `dropLow + dropHigh < n`: at least one observation is always kept: tested for every `n` in 1…105 and proportions up to `Nextafter(0.5, 0)`, and for `n` up to 2^53. *(v2 correction: v1 claimed the float64 product `n × p` could round up to `n/2` for very large `n`; analysis and tests show it cannot below 2^53.)* The code keeps a defensive check that returns `ErrProportion`. | S2, S3 |
+| FR-6 | The package prints nothing, logs nothing, never panics on any input, never calls `os.Exit`, holds no state, and is safe for concurrent use. | — |
+
+### Reuse requirements (the firm's offering)
+
+| ID | Requirement |
+|---|---|
+| FR-R1 | The module depends on the standard library only (`go.mod` has no `require`). |
+| FR-R2 | Released by a semantic-version tag; `go get github.com/mioluigi/trimmedmean@<tag>` works from a fresh module on the Mac. |
+| FR-R3 | Every exported identifier has a doc comment; at least three runnable `Example` functions (symmetric, asymmetric, error handling) pass under `go test`. |
+| FR-R4 | The package README alone is enough to install, call, and understand every error and limit. It contains: the `go get github.com/mioluigi/trimmedmean@<tag>` command; the `import` line; a call with one and with two proportions; error handling with `errors.Is`; the definition (§3); the differences from R (§8.2); the limits (§8.1); how to run the tests and benchmarks; the licence. Its code is the code of the `Example` functions, which `go test` compiles and checks. |
+
+## 5. Functional requirements — program (`go-trimmed-mean-demo`)
+
+| ID | Requirement | Steps |
+|---|---|---|
+| FR-7 | `main.go` imports `github.com/mioluigi/trimmedmean` at the released tag (no `replace`, no `go.work`). | S5 |
+| FR-8 | **With no arguments**, the program reads every committed sample in `data/` — at least one integer sample and one float sample of **at least 100 values** each (the data gate enforces ≥ 100 per file) — with integers as `[]int` and floats as `[]float64`, computes every case in `testdata/r-reference/trimmed-means.tsv` (which includes R's `mean(x, trim = 0.05)` for every sample), compares each with R's saved value under §7, and writes `results/comparison.tsv`. It prints, in plain words: a table for **trim = 0.05** with sample, n, kind, Go value, R value, difference and PASS/FAIL; then one line saying how many of all rows agreed and where the full table is (constitution 6.4). | S5, S6 |
+| FR-9 | `-data FILE -trim P` computes one trimmed mean for the user's file (`-trim "0.05"` symmetric, `-trim "0.05,0.10"` asymmetric) and prints it with the counts dropped from each end. | S5 |
+| FR-10 | Input files: one number per line, optional header line `value`, blank lines ignored; the kind (integer or float) is detected from the content. | S5 |
+| FR-11 | Logs (structured, `log/slog`) go to standard error; results go to standard output. `-cpuprofile FILE` and `-memprofile FILE` write profiles. | — |
+| FR-12 | Exit codes: **0** success (and, in comparison mode, every row agrees); **1** a comparison disagrees or a run-time failure; **2** a usage or input error. | — |
+| FR-13 | The program README gives, step by step, how to **get and use the package in your own Go program** (`go mod init`, `go get …@<tag>`, `import`, a call, error handling), then how to build, run and test this program; and links `docs/ai-dialogs/README.md`. | S7, S9 |
+
+## 6. Non-functional requirements
+
+| ID | Requirement | Rubric |
+|---|---|---|
+| NFR-1 | `gofmt`, `go vet` clean; functions short and single-purpose; names specific (constitution Art. 2). | [C] |
+| NFR-2 | Package: table-driven unit tests with hand-computed answers; R reference tests from saved files; mutation check of the critical tests with `-count=1`; benchmarks at n = 100, 10,000, 1,000,000 with `-benchmem`. | [T] |
+| NFR-3 | Program: tests of every exit code and message on the **built binary**; a CPU and memory profile of a run on the **largest committed sample** kept in `results/`, with its structured log. | [T][A] |
+| NFR-4 | Time and memory: `O(n log n)` time and one copy of the input (8 bytes × n) of extra memory, confirmed by the benchmark's allocations. | [T][D] |
+| NFR-5 | Build instructions and scripts for macOS (arm64, amd64), a Windows `.exe`, and a macOS `.app`. | [A] |
+| NFR-6 | Tests need neither R nor the internet. | [T] |
+
+## 7. Comparison rule with R (fixed before measuring; constitution 1.1)
+
+Settled by spike 001 addendum B (R 4.4.2, aarch64-apple-darwin, 8-byte long double):
+
+- **Exact agreement** (identical float64) for: every **integer** row; every **untrimmed** row; every
+  **asymmetric** row (R evaluates our definition with a full sort, as Go does).
+- **Trimmed symmetric float rows:** exact agreement with **R's mean of the fully sorted kept values**, **and**
+  `|Go − R built-in| ≤ 10⁻¹⁴ × mean(|kept values|)`. Reason: R's built-in adds the kept values in the order its
+  partial sort leaves them; the measured worst gap is 4.7 × 10⁻¹⁶ on that scale, so the limit is 20 times it.
+- Go must read the samples as the same doubles R read: Go's parse of each sample equals R's saved
+  `*-as-read-by-r.txt` value (a test).
+- The comparison reports, per row: Go value, R value, difference in units in the last place (ULPs), and
+  PASS/FAIL. A single FAIL makes the run exit 1.
+
+## 8. Limits and consequences
+
+### 8.1 Boundaries
+
+Messages in this table are the **program's**; the package returns the matching error (FR-4).
+
+| Item | Supported | Rejected, with message and exit code |
+|---|---|---|
+| Element types | all Go integer and float types | — (compile-time) |
+| Number of values | 1 to memory limits (benchmarked to 10^6) | 0: `ErrEmpty` → program: `no numbers in FILE` · exit 2 |
+| Proportions | each in [0, 0.5); one or two of them | NaN, < 0, ≥ 0.5: `ErrProportion` → `trim proportion 0.6 is outside [0, 0.5)` · exit 2; three or more: `ErrProportionCount` · exit 2 |
+| Values | any non-NaN number; ±Inf values accepted when the **result** is finite (trimmed away) | NaN value: `ErrNaN` · exit 2; NaN or infinite **result**: `ErrNotFinite` · exit 1 |
+| Integer magnitude | exact when every value and the sum are below 2^53 in magnitude | beyond: still computed, documented loss of precision (README limit) |
+| Input file | one number per line, optional `value` header | missing file, unreadable line (`line 7: "12abc" is not a number`) · exit 2 |
+| Flags | `-data`, `-trim`, `-cpuprofile`, `-memprofile` | unknown flag, `-trim` without `-data`, malformed `-trim` · usage text · exit 2 |
+
+### 8.2 Deliberate differences from R (README table)
+
+| Case | R | This package | Why |
+|---|---|---|---|
+| negative trim | ignored, untrimmed mean | `ErrProportion` | a negative proportion is a caller mistake, not a request |
+| trim ≥ 0.5 | returns the median | `ErrProportion` | a mean function that silently returns a median surprises callers |
+| NA / NaN in data | `NA` | `ErrNaN` | an error says where; `NA` propagates silently |
+| empty data | `NaN` | `ErrEmpty` | same |
+
+**Same as R** (not a difference, listed because it surprises): when the sum of very large values overflows, R re-adds each value divided by the count and returns a finite mean; the package does the same.
+| ±Inf kept, result NaN | `NaN` | `ErrNotFinite` | no silent NaN |
+
+(Every R behaviour in this table is confirmed by `testdata/r-reference/semantics.tsv`, spike addendum B.)
+
+### 8.3 Failure behaviour
+
+- **Bad input:** rejected before any computation, with the line number or value; nothing written.
+- **Partial failure (comparison mode):** every row is still compared and reported; the exit code says whether
+  all agreed. `results/comparison.tsv` is written to a temporary file and renamed, so an interrupted or failed
+  write never leaves a half file.
+- **Interruption (Ctrl-C), full disk:** the program has nothing to clean up beyond the temporary file; a write
+  error is reported with the path and exit 1.
+- **Timeout:** not applicable (no network, bounded work).
+
+### 8.4 Unintended consequences
+
+| For | Risk | Guard |
+|---|---|---|
+| Data | the caller's slice reordered by sorting | FR-3, tested by comparing the input before and after |
+| Data | personal data in committed samples | samples are synthetic, from a seeded script (constitution 8.3); data gate |
+| Users | a misleading number (NaN, a median presented as a mean, silent precision loss) | FR-4, §8.2, the integer limit in the README |
+| Users | believing asymmetric results are "R's" | README says asymmetric is our definition, cross-checked in R |
+| External systems | a mistaken release cached forever by the Go module proxy | a tag is pushed only after the package's acceptance passes; never moved; a fix gets a new version (constitution 9.2) |
+
+## 9. Acceptance criteria
+
+| AC | Criterion | Test |
+|---|---|---|
+| AC-1 | Hand-computed cases: `Mean([]int{1,2,3,4,100}, 0.2) == 3`; asymmetric `Mean([]float64{1,2,3,4,5,6,7,8,9,10}, 0.1, 0.2) == 5` (keeps 2…8); no proportion equals the plain mean | package unit test |
+| AC-2 | `floor` rule: n = 100, trim 0.29 drops 28 from each end | package unit test |
+| AC-2a | Integer path is R's one-pass mean (a case where one-pass and two-pass differ); float path has R's overflow fallback (`[1e308, 1e308]` gives 1e308) | package unit test |
+| AC-3 | Every R reference row (symmetric built-in and asymmetric defined) agrees under §7 | package test over `testdata/` copy · program comparison mode |
+| AC-4 | Every error in FR-4 is returned for its case (including NaN and ±Inf proportions and three proportions), matched with `errors.Is`; a 30 s fuzz run finds no panic and no result outside [min, max] (evidence, not proof) | package unit + fuzz test |
+| AC-5 | The input slice is unchanged after the call | package unit test |
+| AC-6 | Counts equal `floor(n·p)` and keep at least one value for every n in 1…105 and proportions up to `Nextafter(0.5, 0)`, and for n up to 2^53 | package unit test |
+| AC-7 | `go.mod` of the package has no `require`; `Example` functions pass | acceptance script |
+| AC-8 | Neither repository has a `replace` directive or a `go.work` file; a fresh clone of the program builds with an empty `GOMODCACHE` and `-mod=readonly`, fetching the released tag; package and program tests pass with `GOPROXY=off` and no `Rscript` on `PATH`; the package's R test (AC-3) passes **on the Mac** | acceptance script (Mac) |
+| AC-9 | Program with no arguments exits 0; stdout names every sample, its n, the Go and R values at trim 0.05 and PASS, and the count of agreeing rows; `results/comparison.tsv` has every reference row | built-binary test |
+| AC-10 | Each row of §8.1 gives its message and exit code | built-binary tests |
+| AC-11 | Mutation check: at least 6 behavioural mutants (`floor`→`round`, upper index off by one, low/high swapped, single-pass mean, copy removed, validation inverted) all caught | `docs/mutation-checks.txt` |
+| AC-12 | Binaries for macOS and Windows and a macOS `.app` are built by the scripts | acceptance script |
+| AC-13 | Each README has the required sections (package: install, use, errors, limits, R differences, tests, licence; program: roles, get and use, build, run, test, results, limits, GenAI Tools) and contains the `go get github.com/mioluigi/trimmedmean@` command; `docs/ai-dialogs/README.md` exists and lists every dialog file | acceptance script checks headings and strings |
+| AC-14 | README numbers come from generated blocks; `scripts/readme.sh --check` passes | acceptance script |
+| AC-15 | Every script and guard (data gate, measurement freshness, acceptance checks) is tested on a passing and a failing case | script tests |
+| AC-16 | Every exported identifier of the package has a doc comment; no function exceeds 40 lines; `gofmt -l` and `go vet` are clean | package test (`go/ast`) + acceptance |
+
+## 10. Traceability
+
+| Step | Requirements | ACs |
+|---|---|---|
+| S1 package in its own repository, tutorialspoint | FR-1, FR-R1, FR-R2; spike §2 mapping | AC-7 |
+| S2 ints and/or floats, proportions after sorting | FR-1, FR-3, FR-4, FR-5 | AC-1, AC-4, AC-5, AC-6 |
+| S3 asymmetric | FR-2 | AC-1, AC-3 |
+| S4 one argument → symmetric | FR-2 | AC-1 |
+| S5 second repository, `main.go` imports | FR-7 … FR-12 | AC-8, AC-9, AC-10 |
+| S6 ≥ 100 ints and floats vs R trim = 0.05 | FR-8, §7 | AC-3, AC-9 |
+| S7 README: get and use, Go vs R summary | FR-R4, §8.2 | AC-13, AC-14 |
+| S8 bootstrap (optional, deferred) | — | — |
+| S9 two URLs, README each, GenAI Tools | — | AC-13 |
+
+| Rubric | Where |
+|---|---|
+| [C] | NFR-1; Art. 2 |
+| [T] | NFR-2, NFR-3, NFR-6; AC-3, AC-4, AC-11 |
+| [D] | FR-1…6, FR-R1…R4, NFR-4 |
+| [Doc] | FR-R4; AC-13, AC-14; Art. 5 |
+| [A] | FR-9…12, NFR-5; AC-9, AC-10, AC-12 |
+
+## 11. Open decisions (recommendation first)
+
+| Q | Decision | Recommendation and reason |
+|---|---|---|
+| Q1 | API shape | **One variadic `Mean(values, proportions...)`**: it reads exactly like the assignment ("if only one argument is provided … symmetric"). Cost: three or more proportions are caught at run time (`ErrProportionCount`), not compile time (R1 4.4). Alternative: separate `Symmetric` and `Asymmetric` functions — clearer types, but two names for one idea. R1 agrees. |
+| Q2 | "Integers and/or floats" | **Generics (`[T Number]`)**: one function for every numeric slice, checked at compile time. A Go slice holds one type, so a mixed list is passed as `[]float64`. Alternative: `[]any`, which loses type safety. |
+| Q3 | Infinite values | **Allow ±Inf; reject a NaN or infinite result (`ErrNotFinite`)**: trimming is meant to remove extreme values, and the error catches the only harmful case. Alternative: reject any non-finite value. |
+| Q4 | trim ≥ 0.5 | **Reject (`ErrProportion`)** with a message that names R's median behaviour. Alternative: return the median as R does. |
+| Q5 | Asymmetric flag syntax | **`-trim "low,high"`**, one flag mirroring the function. Alternative: `-low` and `-high`. |
+| Q6 | First release version | **`v0.1.0`** as soon as the package passes its tests, so the program can be built against it; **`v1.0.0`** after R2's fixes, and the program moves to it in the final acceptance step (recommendation changed after R1). No tag is ever moved. Alternative: `v1.0.0` straight away, with `v1.0.1` for any R2 fix. |
+| Q7 | Float comparison rule | **As §7**, settled by spike evidence; reproducing R's partial sort is **not** recommended: it would tie the package's arithmetic to R's internals for a gap of about two machine epsilons. |
+
+===== FILE: README.md =====
+# go-trimmed-mean-demo
+
+A Go program that uses the trimmed-mean package
+**[github.com/mioluigi/trimmedmean](https://github.com/mioluigi/trimmedmean)** and checks it against R's
+`mean(x, trim = 0.05)` on samples of at least 100 integers and 100 floats.
+
+This is the second of two repositories for the MSDS 431 Week 9 assignment *Create a Go Package*:
+
+| Repository | Role |
+|---|---|
+| [`mioluigi/trimmedmean`](https://github.com/mioluigi/trimmedmean) | **The package**: `trimmedmean.Mean(values, proportions...)`, symmetric or asymmetric trimming, for any Go integer or float slice. No dependencies. MIT licence. |
+| `mioluigi/go-trimmed-mean-demo` (this one) | **The example program**: imports the package, compares it with R, and holds the data, the R script, the results and the project documents. |
+
+## Summary
+
+<!-- BEGIN generated:headline -->
+- **84 of 84** comparisons with R agree under the rule of spec §7.
+- At `trim = 0.05`, Go equals R **exactly** on **3 of 3** integer samples; on the float samples the largest difference from R is **2.2e-16**.
+- Slowest benchmark (`floats/n=1000000`): **87.93 ms** per call, **7.63 MiB** allocated in **1** allocation(s).
+<!-- END generated:headline -->
+
+The integer results equal R's exactly. The float results equal R's own mean of the fully sorted kept values
+exactly, and differ from R's `mean(x, trim)` only in the last digits, because R adds the kept values in the
+order its partial sort leaves them ([why](#how-the-comparison-with-r-works)).
+
+## Contents
+
+| Path | Role |
+|---|---|
+| `main.go`, `comparison.go`, `profile.go` | the program: comparison mode, one-file mode, profiles |
+| `internal/sample/` | reads a file of numbers (integers or floats) |
+| `internal/compare/` | the rule that decides whether a Go result agrees with R's ([spec §7](specs/001-trimmed-mean/spec.md)) |
+| `cmd/tables/` | turns `results/` into the generated tables of this README |
+| `data/` | the six samples: 100, 101 and 1,000 integers; 100, 101 and 1,000 floats (`MANIFEST.tsv`: size, SHA-256, seed) |
+| `r/capture-reference.R` | the R script that generated the samples and R's results (seed 9431) |
+| `testdata/r-reference/` | R's saved results: 84 trimmed means, R's behaviour at the edges, the doubles R read, the R session |
+| `results/` | the official run on the Mac: the comparison, benchmarks, profiles, machine, generated tables |
+| `scripts/` | build, `.app`, data gate, measurement, README tables, acceptance, review bundle, R capture |
+| `docs/`, `specs/` | assignment and rubric, constitution, spike, spec, plan, tasks, reviews, decisions, AI dialogs |
+
+## Getting and using the package
+
+These steps use the package in **your own** Go program; nothing from this repository is needed.
+
+1. Install Go 1.24 or later (<https://go.dev/dl/>), and check it with `go version`.
+2. Make a folder for your program and start a module in it:
+
+   ```bash
+   mkdir mystats && cd mystats
+   go mod init example.com/mystats
+   ```
+
+3. Get the package (this writes it into `go.mod` and its checksum into `go.sum`):
+
+   ```bash
+   go get github.com/mioluigi/trimmedmean@v1.0.0
+   ```
+
+4. Write `main.go`:
+
+   ```go
+   package main
+
+   import (
+   	"errors"
+   	"fmt"
+   	"log"
+
+   	"github.com/mioluigi/trimmedmean"
+   )
+
+   func main() {
+   	values := []float64{2.1, 2.4, 2.2, 2.3, 9.9, 2.5, 2.2, 0.1, 2.4, 2.3}
+
+   	symmetric, err := trimmedmean.Mean(values, 0.1) // 10% from each end
+   	if err != nil {
+   		log.Fatal(err)
+   	}
+   	asymmetric, err := trimmedmean.Mean(values, 0.1, 0.2) // 10% from the bottom, 20% from the top
+   	if err != nil {
+   		log.Fatal(err)
+   	}
+   	fmt.Println(symmetric, asymmetric)
+
+   	if _, err := trimmedmean.Mean(values, 0.5); errors.Is(err, trimmedmean.ErrProportion) {
+   		fmt.Println("rejected:", err)
+   	}
+   }
+   ```
+
+5. Run it with `go run .`. It prints the two trimmed means, then the reason a proportion of 0.5 was
+   rejected.
+
+The package's own [README](https://github.com/mioluigi/trimmedmean#readme) documents every call, error and
+limit. In short: no proportion gives the ordinary mean; **one** proportion trims **symmetrically**, like R's
+`mean(x, trim)`; **two** trim the bottom and the top separately; each proportion must be in `[0, 0.5)`.
+Integers (`[]int`, `[]int64`, …) and floats (`[]float64`, `[]float32`, …) are both accepted.
+
+## Building
+
+You need Go 1.24 or later and this repository:
+
+```bash
+git clone https://github.com/mioluigi/go-trimmed-mean-demo.git
+cd go-trimmed-mean-demo
+go build -o trimmed-mean-demo .          # this machine
+scripts/build.sh                         # dist/: macOS (Apple silicon, Intel) and Windows .exe
+scripts/build-macos-app.sh               # dist/TrimmedMean.app
+```
+
+`go build` downloads the package at the version in `go.mod` and checks it against `go.sum`.
+`scripts/build.sh` cross-compiles from any machine, producing `trimmed-mean-demo-macos-arm64`,
+`trimmed-mean-demo-macos-amd64` and `trimmed-mean-demo.exe`. **`TrimmedMean.app`** can be double-clicked
+in Finder: it opens Terminal, runs the comparison with R on samples bundled inside the app, and shows how
+to analyse your own file. (Unsigned: the first time, right-click it and choose *Open*.)
+
+## Running
+
+Run from the repository folder, where `data/` and `testdata/` are.
+
+```bash
+./trimmed-mean-demo                                       # compare with R on every committed sample
+./trimmed-mean-demo -data data/integers-100.csv -trim 0.05
+./trimmed-mean-demo -data data/floats-1000.csv -trim 0.05,0.10
+./trimmed-mean-demo -h                                    # every option
+```
+
+On Windows: `trimmed-mean-demo.exe -data data\floats-100.csv -trim 0.05`.
+
+**With no arguments** the program computes all 84 cases R saved (8 symmetric proportions and 6 asymmetric
+pairs for each of the 6 samples), judges each by the rule below, prints the `trim = 0.05` comparison and a
+one-line verdict, and writes the full table to `results/comparison.tsv`. **With `-data FILE`** it computes
+one trimmed mean; `-trim P` trims `P` from each end (default 0.05), `-trim LOW,HIGH` trims the two ends
+separately. The input file has one number per line, optionally under a first line `value`; blank lines are
+ignored; a file of whole numbers is read as integers.
+
+| Option | Meaning |
+|---|---|
+| `-data FILE` | compute one trimmed mean of FILE |
+| `-trim P` or `-trim LOW,HIGH` | proportions trimmed (with `-data`) |
+| `-data-dir`, `-reference`, `-out` | comparison mode: samples, R's results, output table |
+| `-cpuprofile FILE`, `-memprofile FILE` | write profiles |
+
+Logs (what was read and computed) go to standard error; results to standard output.
+
+| Exit code | Meaning | Examples |
+|---|---|---|
+| 0 | success; in comparison mode, every row agrees with R | |
+| 1 | a comparison with R failed, or the mean is not finite | `-data f.csv -trim 0` on a file holding both `-Inf` and `Inf` |
+| 2 | a usage or input error, with a message saying what to fix | `-trim 0.6` → `trim proportion must be in [0, 0.5): got 0.6`; a line `12abc` → `line 3: "12abc" is not a number`; an empty file → `no numbers in FILE`; `-trim` without `-data` |
+
+## Testing
+
+```bash
+go test ./...                    # all tests; they need neither R nor the internet
+scripts/check-inputs.sh          # the data gate: every sample matches data/MANIFEST.tsv
+scripts/acceptance.sh            # every acceptance criterion, on fresh clones of both repositories (needs GitHub)
+```
+
+- `main_test.go` builds the program and tests the **built binary**: the comparison (84 of 84), a planted wrong
+  R value (exit 1, `FAIL`), one-file mode, twelve input errors with their exact message and exit code, and
+  the profile flags.
+- `internal/compare` tests the rule with planted one-ULP differences; `internal/sample` the reader;
+  `cmd/tables` the generated tables, including a stale README.
+- The package's own tests ([trimmedmean](https://github.com/mioluigi/trimmedmean#tests)) include the same 84
+  R results, examples, a fuzz test and benchmarks.
+- [`docs/mutation-checks.txt`](docs/mutation-checks.txt): 24 deliberate defects in the package and the
+  program; the tests caught all 24.
+
+To regenerate R's results (needs R; changes the committed samples only if the R script changes):
+`scripts/capture-r.sh`.
+
+## Results
+
+Official run on the Mac (`scripts/measure.sh`). Every number below is generated from `results/` by
+`scripts/readme.sh`; none is typed.
+
+**Go against R at `trim = 0.05`**, the comparison the assignment asks for:
+
+<!-- BEGIN generated:comparison -->
+| Sample | n | Kind | Go `Mean(x, 0.05)` | R `mean(x, trim = 0.05)` | Difference | ULPs | Rule | Verdict |
+|---|---:|---|---:|---:|---:|---:|---|---|
+| integers-100 | 100 | integer | 50.81111111111111 | 50.81111111111111 | 0 | 0 | exact | PASS |
+| integers-101 | 101 | integer | 51.032967032967036 | 51.032967032967036 | 0 | 0 | exact | PASS |
+| integers-1000 | 1000 | integer | 51.317777777777778 | 51.317777777777778 | 0 | 0 | exact | PASS |
+| floats-100 | 100 | double | 0.082987777777777605 | 0.082987777777777827 | 2.2e-16 | 16 | exact full sort + tolerance | PASS |
+| floats-101 | 101 | double | -0.042767032967032943 | -0.042767032967032916 | 2.8e-17 | 4 | exact full sort + tolerance | PASS |
+| floats-1000 | 1000 | double | -0.031235555555555555 | -0.031235555555555468 | 8.7e-17 | 25 | exact full sort + tolerance | PASS |
+<!-- END generated:comparison -->
+
+**All 84 comparisons**, by the rule that applies:
+
+<!-- BEGIN generated:agreement -->
+| Rule · kind | Rows | Agree | Largest distance from R's built-in (ULPs) |
+|---|---:|---:|---:|
+| exact full sort + tolerance · double | 21 | 21 | 303 |
+| exact · double | 21 | 21 | 0 |
+| exact · integer | 42 | 42 | 0 |
+<!-- END generated:agreement -->
+
+**Time and memory** of `trimmedmean.Mean` (package benchmarks, `go test -bench -benchmem`, 5 runs each,
+medians):
+
+<!-- BEGIN generated:benchmarks -->
+| Benchmark (`trim = 0.05`) | Runs | Median time per call | Memory per call | Allocations |
+|---|---:|---:|---:|---:|
+| floats/n=100 | 5 | 1.10 µs | 896 B | 1 |
+| ints/n=100 | 5 | 1.00 µs | 896 B | 1 |
+| floats/n=10000 | 5 | 574.37 µs | 80.0 KiB | 1 |
+| ints/n=10000 | 5 | 470.31 µs | 80.0 KiB | 1 |
+| floats/n=1000000 | 5 | 87.93 ms | 7.63 MiB | 1 |
+| ints/n=1000000 | 5 | 44.06 ms | 7.63 MiB | 1 |
+<!-- END generated:benchmarks -->
+
+The package makes one allocation per call: a float64 copy of the input, which it sorts, so the caller's
+slice is never changed. The integer benchmarks are faster than the float ones of the same size because
+their values are drawn from only 1,000 distinct integers, which sort faster, and integers need one pass
+instead of two.
+
+Profiles of the program on a file of 1,000,000 values are in [`results/cpu-profile.txt`](results/cpu-profile.txt)
+and [`results/mem-profile.txt`](results/mem-profile.txt). They show that, for the **program**, reading the
+file costs more than the trimmed mean: most of the memory allocated is the reader's line buffer
+(`sample.readValueLines`), and the sort (`slices.partitionOrdered`) is the largest single CPU cost of the
+package. A reader that parses as it scans would cut the program's memory; the package is not affected.
+
+<!-- BEGIN generated:machine -->
+```
+measured: 2026-11-22 19:36 EST
+commit: 2304f25
+machine: MacBookPro18,2 · Apple M1 Max · 64 GB · macOS 27.2.1
+go: go version go1.27.2 darwin/arm64
+trimmedmean: v0.1.0
+R reference: R version 4.4.2 (2024-10-31), aarch64-apple-darwin20
+```
+<!-- END generated:machine -->
+
+## How the comparison with R works
+
+R's results come from [`r/capture-reference.R`](r/capture-reference.R), run once on the Mac: it generated
+the samples (seed 9431; floats written with 4 decimals), read them back, and saved `mean(x, trim)` for each.
+What R does was learned by running it ([spike 001](docs/spikes/001-environment-and-r-reference.md)):
+
+- R removes `floor(n × trim)` values from each end, in float64: `100 × 0.29` removes 28, not 29. The
+  package does the same.
+- R averages **integers** with one exact sum divided by the count, and **doubles** with a two-pass method;
+  the package does the same, so for the same numbers an integer and a float sample can differ in the last
+  digit, in R and in Go alike.
+- R sorts only **partly** before averaging, so it adds the kept values in a different order from a full sort.
+  On a computer, a sum depends on the order, so R's own result changes in the last digits. Measured on these
+  samples, the gap is at most about two machine epsilons, relative to the size of the values.
+
+The rule ([spec §7](specs/001-trimmed-mean/spec.md)) follows from this. Results must be **identical** for
+integer samples, untrimmed means and the asymmetric definition. For trimmed float samples, Go must be
+identical to R's mean of the fully sorted kept values, **and** within 10⁻¹⁴ × the mean absolute kept value of
+R's `mean(x, trim)` (about 20 times the largest gap measured). Asymmetric trimming has no R function, so R
+evaluated the package's definition for the 36 asymmetric cases.
+
+## Limits
+
+| Limit | Behaviour |
+|---|---|
+| Proportions | each in `[0, 0.5)`, one or two of them; anything else is an error (exit 2). R instead returns the median for 0.5 or more and ignores a negative trim |
+| Values | NaN is rejected (exit 2); `±Inf` are accepted if they are trimmed away; a NaN or infinite result is an error (exit 1) |
+| Integers | exact up to 2^53 in magnitude (values and their sum); larger integers lose precision as float64 |
+| Floats against R | identical to R's full-sort mean; within about two machine epsilons of R's `mean(x, trim)` (see above) |
+| Size | memory for one float64 copy (8 bytes per value) plus the file being read; time `O(n log n)` |
+| Input files | one number per line, optional `value` header; a line that is not a number stops the run with its line number |
+| R results | saved from R 4.4.2 on an Apple-silicon Mac; regenerating them on another platform could change the last digits of the float rows |
+
+## Development process
+
+Built with *Spec-First, Evidence-Driven Development* (SFEDD): assignment and rubric
+([`docs/assignment-and-rubric.md`](docs/assignment-and-rubric.md)), constitution
+([`docs/constitution.md`](docs/constitution.md)), a spike that ran R before planning
+([`docs/spikes/`](docs/spikes/)), a spec reviewed by Gemini ([`docs/reviews/`](docs/reviews/)) and approved,
+plan and tasks ([`specs/001-trimmed-mean/`](specs/001-trimmed-mean/)), one task per commit, and every
+change after approval in [`docs/decisions.md`](docs/decisions.md).
+
+## GenAI Tools
+
+| Tool | Plan | Used for |
+|---|---|---|
+| **Claude** (Anthropic), with Claude Code | Claude Pro | the **builder**: drafted every document, ran the spike, wrote the tests first and then the code of both repositories, the R script and the scripts; triaged both reviews; committed and pushed through GitHub |
+| **Gemini** (Google) | Gemini Ultra | the **independent reviewer**, twice: R1 on the spec before approval, R2 on both finished repositories |
+
+How they were used: Luis Varela, the owner, set the intent and the process, answered every open decision,
+approved the spec, plan and tasks, ran everything that needed his Mac or the internet (R, the release tag,
+the official measurements, the acceptance run), and submitted. Claude never ran R: R's results reached the
+tests only as files committed from the Mac. Every reviewer finding received a recorded decision; claims
+that could be tested were tested first, and two inaccurate reviewer statements are recorded in
+[`docs/reviews/001-spec-review.md`](docs/reviews/001-spec-review.md). The conversation logs are in
+[`docs/ai-dialogs/`](docs/ai-dialogs/README.md).
+
+===== FILE: results/tables.md =====
+# Generated tables (cmd/tables; do not edit)
+
+## agreement
+
+| Rule · kind | Rows | Agree | Largest distance from R's built-in (ULPs) |
+|---|---:|---:|---:|
+| exact full sort + tolerance · double | 21 | 21 | 303 |
+| exact · double | 21 | 21 | 0 |
+| exact · integer | 42 | 42 | 0 |
+
+## benchmarks
+
+| Benchmark (`trim = 0.05`) | Runs | Median time per call | Memory per call | Allocations |
+|---|---:|---:|---:|---:|
+| floats/n=100 | 5 | 1.10 µs | 896 B | 1 |
+| ints/n=100 | 5 | 1.00 µs | 896 B | 1 |
+| floats/n=10000 | 5 | 574.37 µs | 80.0 KiB | 1 |
+| ints/n=10000 | 5 | 470.31 µs | 80.0 KiB | 1 |
+| floats/n=1000000 | 5 | 87.93 ms | 7.63 MiB | 1 |
+| ints/n=1000000 | 5 | 44.06 ms | 7.63 MiB | 1 |
+
+## comparison
+
+| Sample | n | Kind | Go `Mean(x, 0.05)` | R `mean(x, trim = 0.05)` | Difference | ULPs | Rule | Verdict |
+|---|---:|---|---:|---:|---:|---:|---|---|
+| integers-100 | 100 | integer | 50.81111111111111 | 50.81111111111111 | 0 | 0 | exact | PASS |
+| integers-101 | 101 | integer | 51.032967032967036 | 51.032967032967036 | 0 | 0 | exact | PASS |
+| integers-1000 | 1000 | integer | 51.317777777777778 | 51.317777777777778 | 0 | 0 | exact | PASS |
+| floats-100 | 100 | double | 0.082987777777777605 | 0.082987777777777827 | 2.2e-16 | 16 | exact full sort + tolerance | PASS |
+| floats-101 | 101 | double | -0.042767032967032943 | -0.042767032967032916 | 2.8e-17 | 4 | exact full sort + tolerance | PASS |
+| floats-1000 | 1000 | double | -0.031235555555555555 | -0.031235555555555468 | 8.7e-17 | 25 | exact full sort + tolerance | PASS |
+
+## headline
+
+- **84 of 84** comparisons with R agree under the rule of spec §7.
+- At `trim = 0.05`, Go equals R **exactly** on **3 of 3** integer samples; on the float samples the largest difference from R is **2.2e-16**.
+- Slowest benchmark (`floats/n=1000000`): **87.93 ms** per call, **7.63 MiB** allocated in **1** allocation(s).
+
+## machine
+
+```
+measured: 2026-11-22 19:36 EST
+commit: 2304f25
+machine: MacBookPro18,2 · Apple M1 Max · 64 GB · macOS 27.2.1
+go: go version go1.27.2 darwin/arm64
+trimmedmean: v0.1.0
+R reference: R version 4.4.2 (2024-10-31), aarch64-apple-darwin20
+```
+
+===== FILE: docs/mutation-checks.txt =====
+Mutation checks (SFEDD §5.5; spec AC-11), 2026-11-22, run in Claude's workspace (Go 1.24.7).
+Each mutant changes behaviour; it is applied, 'go test -count=1 ./...' is run (no cached results, L-W8-03),
+and the file is restored. A mutant that only fails to compile does not count as caught (L-W6-14).
+Runner: /tmp/mutate.sh (inline in the build dialog); each line names the tests that failed.
+
+# Package github.com/mioluigi/trimmedmean (6fd1a6e)
+caught    M1 floor -> round for the lower count   by: TestDropCountsProperty,TestMeanAgreesWithR,TestMeanFloorRule
+caught    M2 upper index off by one   by: TestMeanAgreesWithR
+caught    M3 low and high swapped   by: ExampleMean_asymmetric,TestMeanAgreesWithR,TestMeanFloorRule,TestMeanHandComputed
+caught    M4 floats use the one-pass mean   by: TestMeanAgreesWithR,TestMeanIntegerAndFloatPaths,TestMeanOverflowFallback
+caught    M5 integers use the two-pass mean   by: TestMeanAgreesWithR,TestMeanIntegerAndFloatPaths
+caught    M6 proportion 0.5 accepted   by: TestMeanErrors
+caught    M7 negative proportion accepted   by: TestMeanErrors
+caught    M8 NaN value not rejected   by: TestMeanErrors
+caught    M9 overflow fallback removed   by: TestMeanOverflowFallback
+caught    M10 non-finite result not rejected   by: TestMeanInfinities
+caught    M11 untrimmed values sorted before averaging   by: TestMeanAgreesWithR
+caught    M12 one proportion trims only the bottom   by: ExampleMean,TestMeanHandComputed,TestMeanInfinities
+caught    M13 three proportions accepted   by: TestMeanErrors
+caught    M14 empty input not rejected   by: TestMeanErrors
+COMPILE-FAIL (does not count)  M15 integer types not recognised
+
+caught    M15 integer types not recognised (rewritten: the first version only failed to compile)   by: TestMeanAgreesWithR,TestMeanIntegerAndFloatPaths
+
+# Program github.com/mioluigi/go-trimmed-mean-demo (250a34e)
+caught    P1 exact rule allows 1 ULP   by: TestCheckExactRules,TestComparisonFailure
+caught    P2 full-sort exactness dropped from the tolerance rule   by: TestCheckToleranceRule
+caught    P3 tolerance 1000 times looser   by: TestCheckToleranceRule
+caught    P4 asymmetric rows judged by tolerance, not exactly   by: TestCheckExactRules
+caught    P5 input errors exit 1 instead of 2   by: TestInputErrors
+caught    P6 header line not skipped   by: TestComparisonFailure,TestComparisonMode,TestInputErrors,TestOneFileMode
+caught    P7 a failed comparison still exits 0   by: TestComparisonFailure
+caught    P8 report swaps the dropped counts   by: TestOneFileMode
+caught    P9 ULP distance wrong for negative numbers   by: TestULPDistance
+
+Result: 24 behavioural mutants, 24 caught, 0 survived. M15 was first written as 'return false', which only
+failed to compile (unused variable); it was rewritten and then caught.
+
+===== FILE: docs/reviews/001-spec-review.md =====
+# Review R1: spec 001 — triage
+
+| Field | Value |
+|---|---|
+| Reviewer | Gemini (web, Gemini Ultra), 2026-11-22 ~18:10 ET |
+| Input | `docs/reviews/001-spec-review-bundle.txt` (5 files, commit `bddebe3`), prompt `001-spec-review-prompt.md` |
+| Raw answer | `docs/reviews/001-spec-review-gemini.txt` (text of the PDF Luis exported) |
+| Receipt check | **Passed**: all 5 files and commit `bddebe3` listed |
+| Verdict | *Approve with changes* |
+
+Every finding gets a decision (SFEDD §2.5). Testable claims were tested first; tests are in `trimmedmean`
+branch `pre-approval`, commit `ddb3e94`.
+
+| # | Sev. | Finding (short) | Decision | Reason / change |
+|---|---|---|---|---|
+| 1.1 | High | READMEs: no concrete get/import/call/error instructions required; `docs/ai-dialogs/README.md` not required by the spec | **Accept** | FR-R4 and new FR-13 list the exact content (`go get …@<tag>`, `import`, a call, `errors.Is`); the README snippet is the same code as the `Example` functions, which `go test` compiles and checks. AC-13 adds `docs/ai-dialogs/README.md`. |
+| 1.2 | High | S6 sample sizes and constitution 6.4 output not in FR-8 | **Accept** | FR-8 now requires at least one integer and one float sample of ≥ 100 values (the data gate already enforces ≥ 100 per file) and says what a finished run prints. AC-9 checks stdout for sample, value and R status. |
+| 1.3 | Med | Profile "on the largest sample"; guards tested on pass and fail | **Accept** | NFR-3 names the largest sample; new AC-15: each script and guard has a pass and a fail test (constitution 3.5). |
+| 1.4 | Med | Doc-comment coverage not checked | **Accept, tested** | New AC-16: a `go/ast` test requires a doc comment on every exported name (caught a planted undocumented function). |
+| 2.1 | High | ±Inf "allowed if finite" contradicts `ErrNotFinite`; FR-4 "names the value" contradicts fixed messages in §8.1 | **Adjust** | Not a contradiction: ±Inf values are allowed and the error is about the *result* (already tested: `[-Inf, 1…8, +Inf]` trimmed 0.1 gives 4.5; untrimmed gives `ErrNotFinite`). Wording of FR-4 and §8.1 made explicit; §8.1 now says its messages are the **program's**, and the package's are `trimmedmean: …: got 0.6`. |
+| 2.2 | Med | No test for `Nextafter(0.5, 0)` at large n | **Accept, tested** | Tests added; they show the rounding worry **cannot happen below 2^53** (n·p stays more than half an ulp below n/2). Spec v1 FR-5 claimed it could: **corrected** (our own error, logged). Guard kept as a defensive check. |
+| 3.1 | High | "trust", "promote", "UX/UI", "short functions" untestable | **Adjust** | §1–§2 are context, not requirements. "Short functions" made checkable: AC-16 also limits functions to 40 lines (tested on a planted 44-line function). UX is checked through AC-9/AC-10 (exact messages and exit codes). |
+| 3.2 | Med | "never panics", "no internet / no R" cannot be proved | **Accept as properties** | AC-4 states the fuzz evidence (30 s, no failure) rather than a proof; acceptance runs `go test` with `GOPROXY=off` and `Rscript` removed from `PATH`. |
+| 4.1 | High | No `low + high < 1` requirement | **Reject, tested** | Each proportion < 0.5 implies the sum < 1, and the counts always keep a value: tested for every n in 1…105 and proportions up to `Nextafter(0.5, 0)`. The reviewer's side claim that counts "can be asymmetric even when low == high if float64 rounding differs" is **inaccurate**: the same expression on the same inputs gives the same result. |
+| 4.2 | High | Integers > 2^53; exact full-sort agreement may fail by 1–2 ulps on aarch64 | **Accept the test, record one inaccuracy** | The > 2^53 limit is already in §8.1 and the README. Exactness on the Mac is now an acceptance check (the package's R test runs on the Mac, AC-3). The statement that R's integer mean "can overflow or lose precision differently" is **inaccurate**: R integers are 32-bit and R sums them in a long double (spike addendum B reproduces all 42 rows with one exact sum). |
+| 4.3 | High | Module: no `replace`, no `go.work`, clean `GOMODCACHE` build | **Accept** | AC-8 now names the checks explicitly. |
+| 4.4 | Med | Variadic arity at run time; NaN proportions; overflow row in §8.2 confusing | **Accept** | NaN, ±Inf and 3-argument cases are tested (`TestMeanErrors`). The overflow row moves from "differences" to a "same as R" note. Run-time arity is the cost of Q1, stated there. |
+| 5 | — | Addendum A cause not shown from R's source; P4 not yet shown on the Mac; P8 output not quoted | **Accept** | Addendum B says "Held" for the *observation*; the *cause* stays a hypothesis (wording clarified). Go-on-Mac exactness is AC-3 on the Mac. P8's output line is quoted in addendum B. |
+| Q6 | — | Prefer `v0.1.0` now, `v1.0.0` after R2 | **Accept (recommendation changed)** | Costs one extra `go get` on the Mac, folded into the final acceptance step; the firm's submitted offering is still `v1.0.0`, and no tag is ever moved. |
+| 7 | — | Scope cuts | **Accept** | Matches the plan: bootstrap deferred; README polish last. |
+
+**Inaccurate reviewer statements recorded** (SFEDD §5.4): 4.1 (asymmetric counts from identical inputs),
+4.2 (R's integer mean overflowing).
+
+===== FILE: go.mod =====
+module github.com/mioluigi/go-trimmed-mean-demo
+
+go 1.24
+
+require github.com/mioluigi/trimmedmean v0.1.0
+
+===== FILE: main.go =====
+// Command go-trimmed-mean-demo shows the trimmedmean package in use.
+//
+// With no arguments it checks the package against R's saved results on the committed samples, prints
+// the comparison at trim = 0.05 (R's mean(x, trim = 0.05)), and writes every comparison to
+// results/comparison.tsv. With -data and -trim it computes one trimmed mean for a file of numbers.
+//
+// Exit codes: 0 success; 1 a comparison with R failed, or a run-time failure; 2 a usage or input error.
+package main
+
+import (
+	"errors"
+	"flag"
+	"fmt"
+	"io"
+	"log/slog"
+	"math"
+	"os"
+	"strconv"
+	"strings"
+
+	"github.com/mioluigi/go-trimmed-mean-demo/internal/sample"
+	"github.com/mioluigi/trimmedmean"
+)
+
+const (
+	exitOK      = 0
+	exitFailure = 1
+	exitUsage   = 2
+)
+
+// Errors for command-line mistakes; they lead to exit code 2.
+var (
+	errTrimWithoutData = errors.New("-trim needs -data FILE")
+	errBadTrim         = errors.New("-trim must be one proportion (0.05) or two separated by a comma (0.05,0.10)")
+)
+
+// options are the command-line settings.
+type options struct {
+	data, trim              string // one-file mode
+	dataDir, reference, out string // comparison mode
+	cpuProfile, memProfile  string
+}
+
+func main() {
+	os.Exit(run(os.Args[1:], os.Stdout, os.Stderr))
+}
+
+// run is the whole program; it returns the exit code so that tests can call it.
+func run(args []string, stdout, stderr io.Writer) int {
+	opts, err := parseFlags(args, stderr)
+	if err != nil {
+		return exitUsage
+	}
+	logger := slog.New(slog.NewTextHandler(stderr, nil))
+	stopProfiles, err := startProfiles(opts)
+	if err != nil {
+		fmt.Fprintln(stderr, "error:", err)
+		return exitFailure
+	}
+	defer stopProfiles(logger)
+
+	switch {
+	case opts.data != "":
+		err = runOne(opts, stdout, logger)
+	case opts.trim != "":
+		err = errTrimWithoutData
+	default:
+		err = runComparison(opts, stdout, logger)
+	}
+	if err != nil {
+		fmt.Fprintln(stderr, "error:", err)
+	}
+	return exitCode(err)
+}
+
+func parseFlags(args []string, stderr io.Writer) (options, error) {
+	var opts options
+	flags := flag.NewFlagSet("go-trimmed-mean-demo", flag.ContinueOnError)
+	flags.SetOutput(stderr)
+	flags.StringVar(&opts.data, "data", "", "file of numbers, one per line (optional header \"value\")")
+	flags.StringVar(&opts.trim, "trim", "0.05", "proportion trimmed from each end, or \"low,high\"")
+	flags.StringVar(&opts.dataDir, "data-dir", "data", "comparison mode: folder of samples")
+	flags.StringVar(&opts.reference, "reference", "testdata/r-reference/trimmed-means.tsv", "comparison mode: R's results")
+	flags.StringVar(&opts.out, "out", "results/comparison.tsv", "comparison mode: table written here")
+	flags.StringVar(&opts.cpuProfile, "cpuprofile", "", "write a CPU profile to this file")
+	flags.StringVar(&opts.memProfile, "memprofile", "", "write a memory profile to this file")
+	flags.Usage = func() {
+		fmt.Fprintln(stderr, "usage: go-trimmed-mean-demo                       compare with R on the committed samples")
+		fmt.Fprintln(stderr, "       go-trimmed-mean-demo -data FILE [-trim P | -trim LOW,HIGH]")
+		flags.PrintDefaults()
+	}
+	if err := flags.Parse(args); err != nil {
+		return options{}, err
+	}
+	if flags.NArg() > 0 {
+		fmt.Fprintf(stderr, "error: unexpected argument %q\n", flags.Arg(0))
+		flags.Usage()
+		return options{}, errors.New("unexpected argument")
+	}
+	trimSet := false
+	flags.Visit(func(f *flag.Flag) { trimSet = trimSet || f.Name == "trim" })
+	if !trimSet {
+		opts.trim = "" // the default applies only with -data
+	}
+	return opts, nil
+}
+
+// exitCode maps an error to the program's exit code: input and usage mistakes are 2, the rest 1.
+func exitCode(err error) int {
+	if err == nil {
+		return exitOK
+	}
+	usageErrors := []error{
+		errTrimWithoutData, errBadTrim, os.ErrNotExist, sample.ErrNoNumbers, sample.ErrNotNumber,
+		trimmedmean.ErrEmpty, trimmedmean.ErrNaN, trimmedmean.ErrProportion, trimmedmean.ErrProportionCount,
+	}
+	for _, usageError := range usageErrors {
+		if errors.Is(err, usageError) {
+			return exitUsage
+		}
+	}
+	return exitFailure
+}
+
+// runOne computes one trimmed mean for the file named by -data and reports it in plain words.
+func runOne(opts options, stdout io.Writer, logger *slog.Logger) error {
+	trim := opts.trim
+	if trim == "" {
+		trim = "0.05"
+	}
+	proportions, err := parseProportions(trim)
+	if err != nil {
+		return err
+	}
+	values, err := sample.Read(opts.data)
+	if err != nil {
+		return err
+	}
+	mean, err := meanOf(values, proportions)
+	if err != nil {
+		return fmt.Errorf("%s: %w", opts.data, err)
+	}
+	low, high := proportions[0], proportions[len(proportions)-1]
+	logger.Info("computed", "file", opts.data, "n", values.Len(), "low", low, "high", high)
+	fmt.Fprintf(stdout, "%s: %d %s\n", opts.data, values.Len(), kindName(values))
+	fmt.Fprintf(stdout, "trimmed %v from the bottom and %v from the top (%d and %d values dropped)\n",
+		low, high, dropped(values.Len(), low), dropped(values.Len(), high))
+	fmt.Fprintf(stdout, "trimmed mean: %v\n", mean)
+	return nil
+}
+
+// parseProportions reads "p" or "low,high".
+func parseProportions(text string) ([]float64, error) {
+	parts := strings.Split(text, ",")
+	proportions := make([]float64, len(parts))
+	for i, part := range parts {
+		value, err := strconv.ParseFloat(strings.TrimSpace(part), 64)
+		if err != nil {
+			return nil, fmt.Errorf("%w: got %q", errBadTrim, text)
+		}
+		proportions[i] = value
+	}
+	return proportions, nil
+}
+
+// meanOf calls the package with the sample's own element type.
+func meanOf(values sample.Sample, proportions []float64) (float64, error) {
+	if values.IsInteger() {
+		return trimmedmean.Mean(values.Integers, proportions...)
+	}
+	return trimmedmean.Mean(values.Floats, proportions...)
+}
+
+// dropped is the number of values removed from one end, for the report only: floor(n × p), the rule
+// the package applies (spec §3).
+func dropped(n int, proportion float64) int {
+	return int(math.Floor(float64(n) * proportion))
+}
+
+func kindName(values sample.Sample) string {
+	if values.IsInteger() {
+		return "integers"
+	}
+	return "floats"
+}
+
+===== FILE: comparison.go =====
+package main
+
+import (
+	"fmt"
+	"io"
+	"log/slog"
+	"os"
+	"path/filepath"
+	"slices"
+	"text/tabwriter"
+
+	"github.com/mioluigi/go-trimmed-mean-demo/internal/compare"
+	"github.com/mioluigi/go-trimmed-mean-demo/internal/sample"
+)
+
+// headlineTrim is the proportion the assignment compares with R: mean(x, trim = 0.05).
+const headlineTrim = 0.05
+
+// comparison is one reference row with Go's value and the verdict.
+type comparison struct {
+	reference compare.Reference
+	got       float64
+	result    compare.Result
+}
+
+// runComparison checks every row of R's reference against the package, writes the full table, and prints
+// the trim = 0.05 rows and a one-line verdict. It returns an error if any row disagrees.
+func runComparison(opts options, stdout io.Writer, logger *slog.Logger) error {
+	references, err := compare.ReadReferences(opts.reference)
+	if err != nil {
+		return err
+	}
+	comparisons, err := compareAll(opts.dataDir, references, logger)
+	if err != nil {
+		return err
+	}
+	if err := writeTable(opts.out, comparisons); err != nil {
+		return err
+	}
+	printHeadline(stdout, comparisons)
+
+	failed := countFailed(comparisons)
+	fmt.Fprintf(stdout, "\n%d of %d comparisons with R agree (rule: spec §7). Full table: %s\n",
+		len(comparisons)-failed, len(comparisons), opts.out)
+	if failed > 0 {
+		return fmt.Errorf("%d comparisons with R failed; see %s", failed, opts.out)
+	}
+	return nil
+}
+
+// compareAll computes Go's trimmed mean for every reference row, reading each sample once.
+func compareAll(dataDir string, references []compare.Reference, logger *slog.Logger) ([]comparison, error) {
+	samples := map[string]sample.Sample{}
+	comparisons := make([]comparison, 0, len(references))
+	for _, reference := range references {
+		values, ok := samples[reference.Sample]
+		if !ok {
+			var err error
+			values, err = readMatching(dataDir, reference)
+			if err != nil {
+				return nil, err
+			}
+			samples[reference.Sample] = values
+			logger.Info("read sample", "sample", reference.Sample, "n", values.Len(), "kind", kindName(values))
+		}
+		got, err := meanOf(values, []float64{reference.Low, reference.High})
+		if err != nil {
+			return nil, fmt.Errorf("%s %v/%v: %w", reference.Sample, reference.Low, reference.High, err)
+		}
+		result := compare.Check(reference, got, keptValues(values, reference))
+		comparisons = append(comparisons, comparison{reference, got, result})
+	}
+	return comparisons, nil
+}
+
+// readMatching reads the sample a reference row names and checks it is the size and kind R saw.
+func readMatching(dataDir string, reference compare.Reference) (sample.Sample, error) {
+	values, err := sample.Read(filepath.Join(dataDir, reference.Sample+".csv"))
+	if err != nil {
+		return sample.Sample{}, err
+	}
+	sameKind := values.IsInteger() == (reference.Kind == "integer")
+	if values.Len() != reference.N || !sameKind {
+		return sample.Sample{}, fmt.Errorf("sample %s: %d %s, but R's reference has %d %s values",
+			reference.Sample, values.Len(), kindName(values), reference.N, reference.Kind)
+	}
+	return values, nil
+}
+
+// keptValues returns the values R kept for a row (in sorted order), for the tolerance's scale.
+func keptValues(values sample.Sample, reference compare.Reference) []float64 {
+	sorted := make([]float64, 0, values.Len())
+	for _, value := range values.Integers {
+		sorted = append(sorted, float64(value))
+	}
+	sorted = append(sorted, values.Floats...)
+	slices.Sort(sorted)
+	return sorted[reference.DropLow : len(sorted)-reference.DropHigh]
+}
+
+// printHeadline prints the rows for R's mean(x, trim = 0.05), the comparison the assignment asks for.
+func printHeadline(stdout io.Writer, comparisons []comparison) {
+	fmt.Fprintln(stdout, "Go trimmedmean.Mean(x, 0.05) against R mean(x, trim = 0.05), committed samples:")
+	table := tabwriter.NewWriter(stdout, 0, 0, 2, ' ', 0)
+	fmt.Fprintln(table, "sample\tn\tkind\tGo\tR\tdifference (ULPs)\tverdict")
+	for _, c := range comparisons {
+		symmetric := c.reference.Method == compare.BuiltIn && c.reference.Low == headlineTrim
+		if symmetric {
+			fmt.Fprintf(table, "%s\t%d\t%s\t%.17g\t%.17g\t%d\t%s\n", c.reference.Sample, c.reference.N,
+				c.reference.Kind, c.got, c.reference.Value, c.result.ULPs, verdict(c.result))
+		}
+	}
+	table.Flush()
+}
+
+// writeTable writes every comparison as a tab-separated table. It writes a temporary file in the same
+// folder and renames it, so a failed or interrupted run never leaves a half-written table.
+func writeTable(path string, comparisons []comparison) error {
+	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+		return err
+	}
+	temporary, err := os.CreateTemp(filepath.Dir(path), ".comparison-*.tsv")
+	if err != nil {
+		return err
+	}
+	defer os.Remove(temporary.Name()) // no effect after a successful rename
+
+	fmt.Fprintln(temporary, "sample\tkind\tn\tlow\thigh\tmethod\tgo\tr\tr_full_sort\tulps\tlimit\trule\tverdict")
+	for _, c := range comparisons {
+		r := c.reference
+		fmt.Fprintf(temporary, "%s\t%s\t%d\t%v\t%v\t%s\t%.17g\t%.17g\t%.17g\t%d\t%.3g\t%s\t%s\n",
+			r.Sample, r.Kind, r.N, r.Low, r.High, r.Method, c.got, r.Value, r.FullSortValue,
+			c.result.ULPs, c.result.Limit, c.result.Rule, verdict(c.result))
+	}
+	if err := temporary.Close(); err != nil {
+		return fmt.Errorf("writing %s: %w", path, err)
+	}
+	return os.Rename(temporary.Name(), path)
+}
+
+func countFailed(comparisons []comparison) int {
+	failed := 0
+	for _, c := range comparisons {
+		if !c.result.Pass {
+			failed++
+		}
+	}
+	return failed
+}
+
+func verdict(result compare.Result) string {
+	if result.Pass {
+		return "PASS"
+	}
+	return "FAIL"
+}
+
+===== FILE: internal/compare/compare.go =====
+// Package compare holds the rule by which a Go trimmed mean is judged to agree with R's (spec §7), and
+// reads R's saved reference results.
+package compare
+
+import (
+	"encoding/csv"
+	"fmt"
+	"math"
+	"os"
+	"strconv"
+)
+
+// Tolerance bounds |Go − R built-in| for trimmed symmetric float rows, as a multiple of the mean absolute
+// kept value. R adds the kept values in the order its partial sort leaves them; the measured worst gap is
+// 4.7e-16 on that scale (spike 001 addendum B), so this limit is about 20 times it.
+const Tolerance = 1e-14
+
+// Methods named in the reference file.
+const (
+	BuiltIn = "mean(x, trim)" // R's own trimmed mean (symmetric)
+	Defined = "defined"       // our asymmetric definition, evaluated in R with a full sort
+)
+
+// Rules a comparison can be judged by.
+const (
+	RuleExact     = "exact"
+	RuleTolerance = "exact full sort + tolerance"
+)
+
+// Reference is one row of R's results (testdata/r-reference/trimmed-means.tsv).
+type Reference struct {
+	Sample, Kind, Method string
+	N                    int
+	Low, High            float64
+	Value                float64 // R's result
+	FullSortValue        float64 // R's mean of the fully sorted kept values
+	DropLow, DropHigh    int
+}
+
+// Result is the verdict on one Go value.
+type Result struct {
+	Rule  string
+	ULPs  uint64  // distance from R's value in units in the last place
+	Limit float64 // absolute limit used by the tolerance rule; 0 for the exact rule
+	Pass  bool
+}
+
+// Check judges got against reference by spec §7: exact for integer rows, untrimmed rows and our
+// asymmetric definition; for trimmed symmetric float rows, exact against R's full-sort mean and within
+// Tolerance × mean(|kept|) of R's built-in. kept is the values the trimmed mean averaged.
+func Check(reference Reference, got float64, kept []float64) Result {
+	ulps := ULPDistance(got, reference.Value)
+	if needsExact(reference) {
+		return Result{Rule: RuleExact, ULPs: ulps, Pass: ulps == 0}
+	}
+	limit := Tolerance * meanAbsolute(kept)
+	pass := got == reference.FullSortValue && math.Abs(got-reference.Value) <= limit
+	return Result{Rule: RuleTolerance, ULPs: ulps, Limit: limit, Pass: pass}
+}
+
+// needsExact reports whether a row must agree exactly: integers sum exactly in any order, untrimmed
+// values are added in the same order by R and Go, and our definition is sorted fully on both sides.
+func needsExact(reference Reference) bool {
+	untrimmed := reference.Low == 0 && reference.High == 0
+	return reference.Kind == "integer" || untrimmed || reference.Method == Defined
+}
+
+// ULPDistance returns how many representable float64 values lie between a and b (0 when equal; +0 and
+// −0 count as equal).
+func ULPDistance(a, b float64) uint64 {
+	ordered := func(x float64) int64 {
+		bits := int64(math.Float64bits(x))
+		if bits < 0 {
+			return math.MinInt64 - bits // map negative floats below the positive ones, in order
+		}
+		return bits
+	}
+	difference := ordered(a) - ordered(b)
+	if difference < 0 {
+		return uint64(-difference)
+	}
+	return uint64(difference)
+}
+
+func meanAbsolute(values []float64) float64 {
+	total := 0.0
+	for _, value := range values {
+		total += math.Abs(value)
+	}
+	return total / float64(len(values))
+}
+
+// ReadReferences reads R's saved results.
+func ReadReferences(path string) ([]Reference, error) {
+	file, err := os.Open(path)
+	if err != nil {
+		return nil, err
+	}
+	defer file.Close()
+	reader := csv.NewReader(file)
+	reader.Comma = '\t'
+	records, err := reader.ReadAll()
+	if err != nil {
+		return nil, fmt.Errorf("reading %s: %w", path, err)
+	}
+	if len(records) < 2 {
+		return nil, fmt.Errorf("%s has no reference rows", path)
+	}
+	references := make([]Reference, 0, len(records)-1)
+	for line, record := range records[1:] {
+		reference, err := parseReference(record)
+		if err != nil {
+			return nil, fmt.Errorf("%s line %d: %w", path, line+2, err)
+		}
+		references = append(references, reference)
+	}
+	return references, nil
+}
+
+// parseReference turns one record (sample, kind, n, low, high, method, value, dropped_low, dropped_high,
+// identical_to_full_sort, identical_as_double, full_sort_value) into a Reference.
+func parseReference(record []string) (Reference, error) {
+	if len(record) != 12 {
+		return Reference{}, fmt.Errorf("%d fields, want 12", len(record))
+	}
+	numbers := make([]float64, 0, 7)
+	for _, index := range []int{2, 3, 4, 6, 7, 8, 11} {
+		value, err := strconv.ParseFloat(record[index], 64)
+		if err != nil {
+			return Reference{}, fmt.Errorf("field %d: %w", index+1, err)
+		}
+		numbers = append(numbers, value)
+	}
+	return Reference{
+		Sample: record[0], Kind: record[1], Method: record[5],
+		N: int(numbers[0]), Low: numbers[1], High: numbers[2], Value: numbers[3],
+		DropLow: int(numbers[4]), DropHigh: int(numbers[5]), FullSortValue: numbers[6],
+	}, nil
+}
+
+===== FILE: internal/sample/sample.go =====
+// Package sample reads a column of numbers from a text file, as integers when every value is a whole
+// number and as floats otherwise.
+package sample
+
+import (
+	"bufio"
+	"errors"
+	"fmt"
+	"os"
+	"path/filepath"
+	"strconv"
+	"strings"
+)
+
+// Errors returned by Read; the message also names the file and, for ErrNotNumber, the line.
+var (
+	// ErrNoNumbers means the file holds no values (it may hold only the header).
+	ErrNoNumbers = errors.New("no numbers")
+	// ErrNotNumber means a line is neither a number nor the header.
+	ErrNotNumber = errors.New("not a number")
+)
+
+// header is the optional first line of a sample file.
+const header = "value"
+
+// Sample is one column of numbers. Exactly one of Integers and Floats holds the values.
+type Sample struct {
+	Name     string // the file name without directory and extension, e.g. "floats-100"
+	Integers []int
+	Floats   []float64
+}
+
+// IsInteger reports whether the sample was read as integers.
+func (s Sample) IsInteger() bool { return s.Integers != nil }
+
+// Len returns the number of values.
+func (s Sample) Len() int { return len(s.Integers) + len(s.Floats) }
+
+// Read reads one number per line from path. Blank lines and a first line "value" are skipped. If every
+// value is a whole number written without a decimal point the sample is integer, otherwise float.
+func Read(path string) (Sample, error) {
+	texts, err := readValueLines(path)
+	if err != nil {
+		return Sample{}, err
+	}
+	name := strings.TrimSuffix(filepath.Base(path), filepath.Ext(path))
+	if integers, ok := parseIntegers(texts); ok {
+		return Sample{Name: name, Integers: integers}, nil
+	}
+	floats, err := parseFloats(path, texts)
+	if err != nil {
+		return Sample{}, err
+	}
+	return Sample{Name: name, Floats: floats}, nil
+}
+
+// valueLine is a non-blank line and its 1-based line number, kept for error messages.
+type valueLine struct {
+	number int
+	text   string
+}
+
+// readValueLines returns the non-blank lines after the optional header.
+func readValueLines(path string) ([]valueLine, error) {
+	file, err := os.Open(path)
+	if err != nil {
+		return nil, err
+	}
+	defer file.Close()
+
+	var lines []valueLine
+	scanner := bufio.NewScanner(file)
+	for number := 1; scanner.Scan(); number++ {
+		text := strings.TrimSpace(scanner.Text())
+		isHeader := number == 1 && text == header
+		if text != "" && !isHeader {
+			lines = append(lines, valueLine{number, text})
+		}
+	}
+	if err := scanner.Err(); err != nil {
+		return nil, fmt.Errorf("reading %s: %w", path, err)
+	}
+	if len(lines) == 0 {
+		return nil, fmt.Errorf("%w in %s", ErrNoNumbers, path)
+	}
+	return lines, nil
+}
+
+// parseIntegers parses every line as an integer, or reports false if any line is not one.
+func parseIntegers(lines []valueLine) ([]int, bool) {
+	integers := make([]int, len(lines))
+	for i, line := range lines {
+		value, err := strconv.Atoi(line.text)
+		if err != nil {
+			return nil, false
+		}
+		integers[i] = value
+	}
+	return integers, true
+}
+
+// parseFloats parses every line as a float64, naming the first line that is not a number.
+func parseFloats(path string, lines []valueLine) ([]float64, error) {
+	floats := make([]float64, len(lines))
+	for i, line := range lines {
+		value, err := strconv.ParseFloat(line.text, 64)
+		if err != nil {
+			return nil, fmt.Errorf("%s line %d: %q is %w", path, line.number, line.text, ErrNotNumber)
+		}
+		floats[i] = value
+	}
+	return floats, nil
+}
+
+===== FILE: main_test.go =====
+package main
+
+import (
+	"bytes"
+	"errors"
+	"os"
+	"os/exec"
+	"path/filepath"
+	"strings"
+	"testing"
+)
+
+// binary is the program built once by TestMain; exit codes are tested on it, never through go run
+// (which reports 1 for every failure).
+var binary string
+
+func TestMain(m *testing.M) {
+	dir, err := os.MkdirTemp("", "trimmed-mean-demo")
+	if err != nil {
+		panic(err)
+	}
+	binary = filepath.Join(dir, "go-trimmed-mean-demo")
+	if output, err := exec.Command("go", "build", "-o", binary, ".").CombinedOutput(); err != nil {
+		panic("build failed: " + string(output))
+	}
+	code := m.Run()
+	os.RemoveAll(dir)
+	os.Exit(code)
+}
+
+// runBinary runs the built program from the repository root and returns its exit code and output.
+func runBinary(t *testing.T, args ...string) (int, string, string) {
+	t.Helper()
+	var stdout, stderr bytes.Buffer
+	command := exec.Command(binary, args...)
+	command.Stdout, command.Stderr = &stdout, &stderr
+	err := command.Run()
+	var exitError *exec.ExitError
+	switch {
+	case err == nil:
+		return 0, stdout.String(), stderr.String()
+	case errors.As(err, &exitError):
+		return exitError.ExitCode(), stdout.String(), stderr.String()
+	default:
+		t.Fatal(err)
+		return 0, "", ""
+	}
+}
+
+func writeInput(t *testing.T, content string) string {
+	t.Helper()
+	path := filepath.Join(t.TempDir(), "input.csv")
+	if err := os.WriteFile(path, []byte(content), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	return path
+}
+
+// TestComparisonMode is AC-9: no arguments, every sample compared, plain-language result, full table.
+func TestComparisonMode(t *testing.T) {
+	out := filepath.Join(t.TempDir(), "comparison.tsv")
+	code, stdout, stderr := runBinary(t, "-out", out)
+	if code != exitOK {
+		t.Fatalf("exit %d, stderr:\n%s", code, stderr)
+	}
+	for _, name := range []string{"integers-100", "integers-101", "integers-1000", "floats-100", "floats-101", "floats-1000"} {
+		if !strings.Contains(stdout, name) {
+			t.Errorf("stdout does not mention %s", name)
+		}
+	}
+	for _, want := range []string{"mean(x, trim = 0.05)", "PASS", "84 of 84 comparisons with R agree"} {
+		if !strings.Contains(stdout, want) {
+			t.Errorf("stdout lacks %q:\n%s", want, stdout)
+		}
+	}
+	if strings.Contains(stdout, "level=INFO") || !strings.Contains(stderr, "level=INFO") {
+		t.Error("logs must go to standard error only")
+	}
+	table, err := os.ReadFile(out)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if lines := strings.Count(string(table), "\n"); lines != 85 {
+		t.Errorf("table has %d lines, want 85 (header + 84 rows)", lines)
+	}
+}
+
+// TestComparisonFailure plants a wrong R value: the run must report FAIL and exit 1.
+func TestComparisonFailure(t *testing.T) {
+	original, err := os.ReadFile("testdata/r-reference/trimmed-means.tsv")
+	if err != nil {
+		t.Fatal(err)
+	}
+	tampered := strings.Replace(string(original), "50.81111111111111", "50.81111111111112", 1)
+	reference := writeInput(t, tampered)
+	code, stdout, stderr := runBinary(t, "-reference", reference, "-out", filepath.Join(t.TempDir(), "c.tsv"))
+	if code != exitFailure || !strings.Contains(stdout, "FAIL") || !strings.Contains(stderr, "1 comparisons with R failed") {
+		t.Fatalf("exit %d, stdout:\n%s\nstderr:\n%s", code, stdout, stderr)
+	}
+}
+
+func TestOneFileMode(t *testing.T) {
+	cases := []struct {
+		args []string
+		want []string
+	}{
+		{[]string{"-data", "data/integers-100.csv", "-trim", "0.05"},
+			[]string{"100 integers", "(5 and 5 values dropped)", "trimmed mean: 50.81111111111111"}},
+		{[]string{"-data", "data/integers-100.csv"},
+			[]string{"trimmed mean: 50.81111111111111"}},
+		{[]string{"-data", "data/floats-100.csv", "-trim", "0.05,0.10"},
+			[]string{"100 floats", "0.05 from the bottom and 0.1 from the top (5 and 10 values dropped)"}},
+	}
+	for _, tc := range cases {
+		code, stdout, stderr := runBinary(t, tc.args...)
+		if code != exitOK {
+			t.Errorf("%v: exit %d, stderr %s", tc.args, code, stderr)
+			continue
+		}
+		for _, want := range tc.want {
+			if !strings.Contains(stdout, want) {
+				t.Errorf("%v: stdout lacks %q:\n%s", tc.args, want, stdout)
+			}
+		}
+	}
+}
+
+// TestInputErrors is AC-10: each boundary of spec §8.1 gives its message and exit code.
+func TestInputErrors(t *testing.T) {
+	notNumber := writeInput(t, "value\n1\n12abc\n")
+	empty := writeInput(t, "value\n")
+	withNaN := writeInput(t, "1\nNaN\n3\n")
+	infinities := writeInput(t, "-Inf\n1\nInf\n")
+	cases := []struct {
+		name string
+		args []string
+		code int
+		want string
+	}{
+		{"proportion too large", []string{"-data", "data/floats-100.csv", "-trim", "0.6"}, exitUsage, "trim proportion must be in [0, 0.5): got 0.6"},
+		{"negative proportion", []string{"-data", "data/floats-100.csv", "-trim", "-0.1"}, exitUsage, "got -0.1"},
+		{"three proportions", []string{"-data", "data/floats-100.csv", "-trim", "0.1,0.1,0.1"}, exitUsage, "at most two trim proportions"},
+		{"malformed trim", []string{"-data", "data/floats-100.csv", "-trim", "abc"}, exitUsage, `-trim must be one proportion`},
+		{"trim without data", []string{"-trim", "0.1"}, exitUsage, "-trim needs -data FILE"},
+		{"missing file", []string{"-data", "no-such-file.csv"}, exitUsage, "no such file"},
+		{"not a number", []string{"-data", notNumber}, exitUsage, `line 3: "12abc" is not a number`},
+		{"no numbers", []string{"-data", empty}, exitUsage, "no numbers in"},
+		{"NaN value", []string{"-data", withNaN}, exitUsage, "value is NaN: at index 1"},
+		{"infinite result", []string{"-data", infinities, "-trim", "0"}, exitFailure, "mean is not finite"},
+		{"unknown flag", []string{"-bogus"}, exitUsage, "usage:"},
+		{"stray argument", []string{"extra"}, exitUsage, `unexpected argument "extra"`},
+	}
+	for _, tc := range cases {
+		code, _, stderr := runBinary(t, tc.args...)
+		if code != tc.code || !strings.Contains(stderr, tc.want) {
+			t.Errorf("%s: exit %d (want %d), stderr %q (want %q)", tc.name, code, tc.code, stderr, tc.want)
+		}
+	}
+}
+
+// TestProfiles checks that -cpuprofile and -memprofile write non-empty files.
+func TestProfiles(t *testing.T) {
+	dir := t.TempDir()
+	cpu, mem := filepath.Join(dir, "cpu.prof"), filepath.Join(dir, "mem.prof")
+	code, _, stderr := runBinary(t, "-data", "data/floats-1000.csv", "-cpuprofile", cpu, "-memprofile", mem)
+	if code != exitOK {
+		t.Fatalf("exit %d: %s", code, stderr)
+	}
+	for _, path := range []string{cpu, mem} {
+		if info, err := os.Stat(path); err != nil || info.Size() == 0 {
+			t.Errorf("%s missing or empty", path)
+		}
+	}
+}
+
+===== FILE: scripts/acceptance.sh =====
+#!/usr/bin/env bash
+# acceptance.sh: checks the acceptance criteria of specs/001-trimmed-mean/spec.md (§9) on FRESH CLONES of
+# both repositories from GitHub, in a temporary folder, with an empty Go module cache. It changes nothing
+# in this copy. Run it on the Mac (it needs GitHub and the Go module proxy) as the last act before
+# submitting.
+#
+# Environment: PACKAGE_VERSION (default: the version the program's go.mod requires),
+#              DEMO_REPO, PACKAGE_REPO (default: the two GitHub repositories).
+# Exit status: 0 if no check failed, 1 otherwise.
+set -uo pipefail
+cd "$(dirname "$0")/.."
+demo_repo="${DEMO_REPO:-https://github.com/mioluigi/go-trimmed-mean-demo.git}"
+package_repo="${PACKAGE_REPO:-https://github.com/mioluigi/trimmedmean.git}"
+version="${PACKAGE_VERSION:-$(awk '$1 == "require" && $2 == "github.com/mioluigi/trimmedmean" {print $3}' go.mod)}"
+
+work="$(mktemp -d)"
+trap 'chmod -R u+w "$work" 2>/dev/null; rm -rf "$work"' EXIT
+export GOMODCACHE="$work/modcache" GOFLAGS=-mod=readonly
+passed=0; failed=0
+
+# check NAME COMMAND...: runs the command quietly; PASS if it succeeds.
+check() {
+  local name="$1"; shift
+  if "$@" > "$work/output.txt" 2>&1; then
+    echo "PASS  $name"; passed=$((passed + 1))
+  else
+    echo "FAIL  $name"; sed 's/^/        /' "$work/output.txt" | tail -n 8; failed=$((failed + 1))
+  fi
+}
+# exits CODE COMMAND...: succeeds if the command exits with exactly that code.
+exits() { local want="$1"; shift; "$@" > /dev/null 2>&1; [ "$?" -eq "$want" ]; }
+# says TEXT COMMAND...: succeeds if the command's output contains the text.
+says() { local text="$1"; shift; "$@" > "$work/said.txt" 2>&1; grep -q -F -- "$text" "$work/said.txt"; }
+# has FILE TEXT...: succeeds if the file contains every text.
+has() { local file="$1"; shift; for text in "$@"; do grep -q -F -- "$text" "$file" || { echo "$file lacks: $text"; return 1; }; done; }
+# offline COMMAND...: runs with no module proxy and with an Rscript that always fails first on PATH,
+# so a test that needed the internet or R would fail (spec NFR-6).
+mkdir -p "$work/no-r"; printf '#!/bin/sh\necho "Rscript is not available in acceptance" >&2\nexit 127\n' > "$work/no-r/Rscript"
+chmod +x "$work/no-r/Rscript"
+offline() { GOPROXY=off PATH="$work/no-r:$PATH" "$@"; }
+no_replace() { ! grep -q -E '^[[:space:]]*replace' go.mod && [ ! -e go.work ]; }
+
+echo "== Fresh clones (package $version)"
+git clone -q --branch "$version" "$package_repo" "$work/trimmedmean" 2>&1 || { echo "FAIL  package tag $version cannot be cloned"; exit 1; }
+git clone -q "$demo_repo" "$work/demo" || { echo "FAIL  program repository cannot be cloned"; exit 1; }
+echo "PASS  both repositories cloned; package at tag $version"; passed=$((passed + 1))
+
+echo "== Package github.com/mioluigi/trimmedmean@$version"
+cd "$work/trimmedmean"
+check "go.mod has no require and no replace; no go.work (FR-R1, AC-7, AC-8)" sh -c '! grep -q -E "^[[:space:]]*(require|replace)" go.mod && [ ! -e go.work ]'
+check "gofmt reports no file; go vet is clean (AC-16)" sh -c '[ -z "$(gofmt -l .)" ] && go vet ./...'
+check "all package tests pass offline, without R: hand-computed, R reference, examples, counts, quality (AC-1..7, 16)" offline go test -count=1 ./...
+check "the R reference test ran and passed on this machine (AC-3)" says "--- PASS: TestMeanAgreesWithR" offline go test -count=1 -v -run 'AgreesWithR' .
+check "package README: install, use, errors, limits, differences from R, tests, licence (FR-R4, AC-13)" \
+  has README.md "go get github.com/mioluigi/trimmedmean@" "## Install" "## Use" "## Errors" "## Limits" "## Differences from R" "## Tests" "## Licence"
+check "LICENSE present" test -s LICENSE
+
+echo "== Program github.com/mioluigi/go-trimmed-mean-demo (fresh clone of main)"
+cd "$work/demo"
+check "go.mod requires trimmedmean $version; no replace; no go.work (FR-7, AC-8)" sh -c "grep -q 'github.com/mioluigi/trimmedmean $version' go.mod && ! grep -q -E '^[[:space:]]*replace' go.mod && [ ! -e go.work ]"
+check "builds from an empty module cache with -mod=readonly, fetching the tag (AC-8)" go build -o "$work/trimmed-mean-demo" .
+check "gofmt reports no file; go vet is clean (NFR-1)" sh -c '[ -z "$(gofmt -l .)" ] && go vet ./...'
+check "all program tests pass offline, without R: built-binary exit codes and messages (AC-9, AC-10)" offline go test -count=1 ./...
+check "samples pass the data gate: 6 files, at least 100 values each (AC-3, S6)" scripts/check-inputs.sh
+check "the data gate fails on a tampered sample (AC-15)" sh -c 'cp -R data "$0/data" && echo 1.23456 >> "$0/data/floats-100.csv" && ! DATA_DIR="$0/data" scripts/check-inputs.sh' "$work"
+check "no arguments: exit 0 and 84 of 84 comparisons agree (AC-9)" says "84 of 84 comparisons with R agree" "$work/trimmed-mean-demo" -out "$work/comparison.tsv"
+check "one file, asymmetric: exit 0 (FR-9)" exits 0 "$work/trimmed-mean-demo" -data data/floats-100.csv -trim 0.05,0.10
+check "trim 0.6: exit 2 (AC-10)" exits 2 "$work/trimmed-mean-demo" -data data/floats-100.csv -trim 0.6
+check "build scripts make the macOS binaries, the Windows .exe and the .app (AC-12)" sh -c \
+  'DIST="$0/dist" scripts/build.sh && DIST="$0/dist" scripts/build-macos-app.sh && test -s "$0/dist/trimmed-mean-demo.exe" -a -s "$0/dist/trimmed-mean-demo-macos-arm64" -a -x "$0/dist/TrimmedMean.app/Contents/MacOS/TrimmedMean"' "$work"
+check "README's generated blocks match results/ (AC-14)" scripts/readme.sh --check
+check "results/comparison.tsv: every row PASS" sh -c '[ "$(tail -n +2 results/comparison.tsv | grep -c -v "	PASS$")" = 0 ] && [ "$(tail -n +2 results/comparison.tsv | wc -l | tr -d " ")" = 84 ]'
+measured="$(awk '/^commit:/ {print $2}' results/machine.txt 2>/dev/null)"
+check "what was measured is what is submitted: no code or data change since commit ${measured:-?}" \
+  sh -c "[ -n '$measured' ] && git diff --quiet '$measured' HEAD -- '*.go' go.mod go.sum data testdata"
+check "results were measured with trimmedmean $version" has results/machine.txt "trimmedmean: $version"
+check "program README: get and use the package, build, run, test, results, limits, GenAI Tools (FR-13, AC-13)" \
+  has README.md "go get github.com/mioluigi/trimmedmean@$version" "## Getting and using the package" "## Building" "## Running" "## Testing" "## Results" "## Limits" "## GenAI Tools"
+check "AI dialogs are indexed: docs/ai-dialogs/README.md lists every file there (AC-13)" sh -c \
+  'test -s docs/ai-dialogs/README.md && for f in docs/ai-dialogs/*; do n="$(basename "$f")"; [ "$n" = README.md ] || grep -q -F "$n" docs/ai-dialogs/README.md || { echo "not indexed: $n"; exit 1; }; done'
+
+echo
+echo "acceptance: $passed passed, $failed failed"
+[ "$failed" -eq 0 ]
+
+===== FILE: ../trimmedmean/README.md =====
+# trimmedmean
+
+A Go package that computes the **trimmed mean** of a slice of integers or floating-point numbers, with
+**symmetric** or **asymmetric** trimming. With one proportion it gives the same result as R's
+`mean(x, trim)`.
+
+- One function, `trimmedmean.Mean`, for every Go integer and float type (generics).
+- No dependencies outside the Go standard library.
+- Never changes your slice, never panics on bad input, and returns errors you can test with `errors.Is`.
+- Checked against R 4.4.2 on 84 reference results ([Tests](#tests)).
+
+A trimmed mean sorts the observations, removes a proportion of them from the lower end and a proportion
+from the upper end, and averages the rest. It resists outliers better than the ordinary mean, and uses
+more of the data than the median.
+
+A complete example program, which also compares this package with R, is in
+[github.com/mioluigi/go-trimmed-mean-demo](https://github.com/mioluigi/go-trimmed-mean-demo).
+
+## Install
+
+The package needs Go 1.24 or later. In your own module:
+
+```bash
+go get github.com/mioluigi/trimmedmean@v1.0.0
+```
+
+That adds `github.com/mioluigi/trimmedmean v1.0.0` to your `go.mod` (and its checksum to `go.sum`).
+Without a module yet, start one first with `go mod init example.com/yourprogram`.
+
+## Use
+
+```go
+package main
+
+import (
+	"errors"
+	"fmt"
+	"log"
+
+	"github.com/mioluigi/trimmedmean"
+)
+
+func main() {
+	// One proportion: symmetric. 10% of 10 values is one value from each end,
+	// so the lowest value (1) and the outlier (1000) are removed.
+	scores := []int{1, 52, 48, 50, 47, 53, 49, 51, 46, 1000}
+	mean, err := trimmedmean.Mean(scores, 0.1)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println(mean) // 49.5
+
+	// Two proportions: asymmetric (low, high). Nothing from the bottom, 20% from the top.
+	latencies := []float64{12.5, 11.0, 13.5, 12.0, 250.0, 11.5, 13.0, 12.5, 400.0, 12.0}
+	mean, err = trimmedmean.Mean(latencies, 0, 0.2)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Printf("%.4f\n", mean) // 12.2500
+
+	// Errors name what was wrong and can be tested with errors.Is.
+	_, err = trimmedmean.Mean([]float64{1, 2, 3}, 0.6)
+	fmt.Println(errors.Is(err, trimmedmean.ErrProportion)) // true
+	fmt.Println(err) // trimmedmean: trim proportion must be in [0, 0.5): got 0.6
+}
+```
+
+These three cases are the package's `Example` functions (`example_test.go`), so `go test` compiles them
+and checks every printed value.
+
+The signature is
+
+```go
+func Mean[T Number](values []T, proportions ...float64) (float64, error)
+```
+
+| Call | Meaning |
+|---|---|
+| `Mean(values)` | the ordinary mean (no trimming) |
+| `Mean(values, p)` | **symmetric**: removes `floor(n × p)` values from each end, like R's `mean(x, trim = p)` |
+| `Mean(values, low, high)` | **asymmetric**: removes `floor(n × low)` values from the bottom and `floor(n × high)` from the top |
+
+`Number` is every Go integer and floating-point type, and any named type based on one (for example
+`type Celsius float64`). A Go slice holds one type; to average a mix of integers and floats, put them in a
+`[]float64`.
+
+## Definition
+
+For `n` values and proportions `low` and `high`, each in `[0, 0.5)`:
+
+1. `dropLow = floor(n × low)` and `dropHigh = floor(n × high)`, computed in float64 exactly as R computes
+   `floor(n * trim)`. For example `100 × 0.29` is `28.999999999999996` in float64, so 28 values are
+   removed, not 29.
+2. A **copy** of the values is sorted, and the mean of `sorted[dropLow : n − dropHigh]` is returned. When
+   nothing is removed, nothing is sorted.
+3. The mean is computed the way R computes it: for **integer** types, one sum divided by the count (exact
+   while the sum stays below 2^53); for **float** types, R's two-pass mean (the sum divided by the count,
+   plus the mean of the deviations from that first estimate), with R's fallback when the sum overflows.
+
+Because each proportion is below 0.5, at least one value is always kept.
+
+## Errors
+
+| Error | When | Example message |
+|---|---|---|
+| `ErrEmpty` | no values | `trimmedmean: no values` |
+| `ErrNaN` | a value is NaN | `trimmedmean: value is NaN: at index 3` |
+| `ErrProportion` | a proportion is NaN, negative, or not below 0.5 | `trimmedmean: trim proportion must be in [0, 0.5): got 0.6` |
+| `ErrProportionCount` | more than two proportions | `trimmedmean: at most two trim proportions (low, high): got 3` |
+| `ErrNotFinite` | the mean of the kept values is NaN or infinite (for example both `+Inf` and `−Inf` are kept) | `trimmedmean: mean is not finite: got NaN` |
+
+Infinite **values** are accepted: `Mean([]float64{math.Inf(-1), 1, 2, 3, 4, 5, 6, 7, 8, math.Inf(1)}, 0.1)`
+trims them away and returns 4.5, as R does.
+
+## Differences from R
+
+The symmetric trimmed mean matches R's `mean(x, trim)` (see [Tests](#tests)). Where R gives an answer
+that is easy to misread, the package returns an error instead:
+
+| Case | R's `mean(x, trim)` | `trimmedmean.Mean` | Why |
+|---|---|---|---|
+| negative proportion | ignores it: the untrimmed mean | `ErrProportion` | a negative proportion is a mistake, not a request |
+| proportion ≥ 0.5 | returns the **median** | `ErrProportion` | a mean function that silently returns a median surprises callers; use a median function |
+| `NA` or `NaN` in the data | `NA` | `ErrNaN`, with the index | an error says where; `NA` spreads silently |
+| no data | `NaN` | `ErrEmpty` | same |
+| two proportions | an error (`'trim' must be numeric of length one`) | asymmetric trimming | R has no asymmetric trimmed mean; this package defines it as above |
+
+The same as R, though it may surprise: if the sum of very large values overflows, the values are added
+again, each divided by the count, so the mean is still finite.
+
+## Limits
+
+- **Integers beyond 2^53** (about 9 × 10^15) in magnitude are converted to float64 and lose precision; so
+  does a sum of integers beyond 2^53. R's integers are 32-bit, so R never meets this case.
+- **Floats agree with R to within about two machine epsilons, not always to the last bit,** when values are
+  trimmed: R adds the kept values in the order its partial sort leaves them, this package in sorted order.
+  The integer, untrimmed and asymmetric results agree with R exactly.
+- **Memory:** one copy of the input as `[]float64` (8 bytes per value). **Time:** `O(n log n)` for the sort.
+- Proportions must be in `[0, 0.5)`; at most two of them.
+
+## Tests
+
+```bash
+go test ./...                                   # unit, R reference, examples, source-quality tests
+go test -run '^$' -fuzz FuzzMean -fuzztime 30s  # fuzzing: no panic, result within [min, max]
+go test -run '^$' -bench . -benchmem            # time and memory at n = 100, 10 000, 1 000 000
+```
+
+| Test | What it checks |
+|---|---|
+| `TestMeanHandComputed`, `TestMeanFloorRule`, `TestMeanIntegerAndFloatPaths`, `TestMeanOverflowFallback`, `TestMeanInfinities` | results computed by hand, R's `floor` rule (100 × 0.29 drops 28), R's integer and float methods |
+| `TestMeanErrors`, `TestMeanLeavesInputUnchanged`, `TestMeanKeepsAtLeastOne`, `TestDropCounts*` | every error, the caller's slice untouched, at least one value kept for every n from 1 to 105 and up to 2^53 |
+| `TestMeanAgreesWithR`, `TestGoReadsWhatRRead` | **84 results saved from R 4.4.2** (`testdata/`, with their provenance): exact for integer, untrimmed and asymmetric rows; trimmed float rows exact against R's own fully-sorted mean and within 10⁻¹⁴ × the mean absolute kept value of R's `mean(x, trim)` |
+| `Example*` | the code in [Use](#use) |
+| `FuzzMean` | no panic, and every result between the smallest and largest value |
+| `TestSourceQuality` | every exported name has a doc comment; no function is longer than 40 lines |
+
+The tests need neither R nor the internet. The R results were generated by
+[`r/capture-reference.R`](https://github.com/mioluigi/go-trimmed-mean-demo/blob/main/r/capture-reference.R)
+in the demonstration repository.
+
+## Licence
+
+MIT; see [LICENSE](LICENSE).
+
+===== FILE: ../trimmedmean/go.mod =====
+module github.com/mioluigi/trimmedmean
+
+go 1.24
+
+===== FILE: ../trimmedmean/trimmedmean.go =====
+// Package trimmedmean computes symmetric and asymmetric trimmed means of integer or floating-point
+// slices.
+//
+// A trimmed mean sorts the observations, removes a proportion of them from the lower end and a
+// proportion from the upper end, and averages the rest. It resists outliers better than the plain mean
+// while using more of the data than the median.
+//
+// The symmetric trimmed mean agrees with R's mean(x, trim): it removes floor(n * trim) observations from
+// each end, and averages the kept values the way R does (one exact sum for integers, R's two-pass method
+// for floating-point values). The README of this module lists where it deliberately differs from R.
+package trimmedmean
+
+import (
+	"errors"
+	"fmt"
+	"math"
+	"slices"
+)
+
+// Number is the set of element types Mean accepts: every Go integer and floating-point type, and any
+// named type based on one of them (for example, type Celsius float64).
+type Number interface {
+	~int | ~int8 | ~int16 | ~int32 | ~int64 |
+		~uint | ~uint8 | ~uint16 | ~uint32 | ~uint64 |
+		~float32 | ~float64
+}
+
+// Errors returned by Mean. Test for them with errors.Is; the returned error also names the offending
+// value.
+var (
+	// ErrEmpty means there were no values to average.
+	ErrEmpty = errors.New("trimmedmean: no values")
+	// ErrNaN means a value was NaN, so no mean is defined.
+	ErrNaN = errors.New("trimmedmean: value is NaN")
+	// ErrProportion means a trim proportion was NaN, negative, or not below 0.5.
+	ErrProportion = errors.New("trimmedmean: trim proportion must be in [0, 0.5)")
+	// ErrProportionCount means more than two trim proportions were given.
+	ErrProportionCount = errors.New("trimmedmean: at most two trim proportions (low, high)")
+	// ErrNotFinite means the mean of the kept values is NaN or infinite, for example when both +Inf
+	// and -Inf are kept.
+	ErrNotFinite = errors.New("trimmedmean: mean is not finite")
+)
+
+// Mean returns the trimmed mean of values.
+//
+// With no proportion it returns the ordinary mean. With one proportion p it trims symmetrically,
+// removing floor(n*p) of the n sorted values from each end, as R's mean(x, trim = p) does. With two
+// proportions low and high it removes floor(n*low) values from the lower end and floor(n*high) from the
+// upper end. Each proportion must be in [0, 0.5), so at least one value is always kept.
+//
+// Mean sorts a copy, never the caller's slice, and is safe for concurrent use.
+func Mean[T Number](values []T, proportions ...float64) (float64, error) {
+	low, high, err := trimProportions(proportions)
+	if err != nil {
+		return 0, err
+	}
+	numbers, err := toFloat64(values)
+	if err != nil {
+		return 0, err
+	}
+	dropLow, dropHigh, err := dropCounts(len(numbers), low, high)
+	if err != nil {
+		return 0, err
+	}
+
+	// Like R, sort only when something is trimmed; untrimmed values are averaged in their given order.
+	kept := numbers
+	if dropLow+dropHigh > 0 {
+		slices.Sort(numbers)
+		kept = numbers[dropLow : len(numbers)-dropHigh]
+	}
+
+	var mean float64
+	if isInteger[T]() {
+		mean = integerMean(kept)
+	} else {
+		mean = floatMean(kept)
+	}
+	if !isFinite(mean) {
+		return 0, fmt.Errorf("%w: got %v", ErrNotFinite, mean)
+	}
+	return mean, nil
+}
+
+// trimProportions turns the optional arguments of Mean into lower and upper proportions: none means no
+// trimming, one means symmetric trimming, two mean (low, high).
+func trimProportions(proportions []float64) (low, high float64, err error) {
+	switch len(proportions) {
+	case 0:
+		return 0, 0, nil
+	case 1:
+		low, high = proportions[0], proportions[0]
+	case 2:
+		low, high = proportions[0], proportions[1]
+	default:
+		return 0, 0, fmt.Errorf("%w: got %d", ErrProportionCount, len(proportions))
+	}
+	for _, proportion := range []float64{low, high} {
+		if !validProportion(proportion) {
+			return 0, 0, fmt.Errorf("%w: got %v", ErrProportion, proportion)
+		}
+	}
+	return low, high, nil
+}
+
+// validProportion reports whether p is in [0, 0.5). NaN fails both comparisons, so it is invalid.
+func validProportion(p float64) bool {
+	return p >= 0 && p < 0.5
+}
+
+// toFloat64 copies values into a new []float64, so that sorting never touches the caller's slice, and
+// rejects an empty slice or a NaN value.
+func toFloat64[T Number](values []T) ([]float64, error) {
+	if len(values) == 0 {
+		return nil, ErrEmpty
+	}
+	numbers := make([]float64, len(values))
+	for i, value := range values {
+		numbers[i] = float64(value)
+		if math.IsNaN(numbers[i]) {
+			return nil, fmt.Errorf("%w: at index %d", ErrNaN, i)
+		}
+	}
+	return numbers, nil
+}
+
+// dropCounts returns how many of count sorted values to remove from each end. It computes floor(n*p) in
+// float64 exactly as R does, so 100 * 0.29 = 28.999999999999996 drops 28. Proportions below 0.5 always
+// leave a value, but for a very large count the product can round up to count/2, so the result is
+// checked rather than assumed.
+func dropCounts(count int, low, high float64) (dropLow, dropHigh int, err error) {
+	n := float64(count)
+	dropLow = int(math.Floor(n * low))
+	dropHigh = int(math.Floor(n * high))
+	if dropLow+dropHigh >= count {
+		return 0, 0, fmt.Errorf("%w: %v and %v leave none of %d values", ErrProportion, low, high, count)
+	}
+	return dropLow, dropHigh, nil
+}
+
+// integerMean is R's mean for integer vectors: one sum divided by the count. The sum of integer values
+// is exact while it stays below 2^53 in magnitude, so this is the correctly rounded mean.
+func integerMean(values []float64) float64 {
+	sum := 0.0
+	for _, value := range values {
+		sum += value
+	}
+	return sum / float64(len(values))
+}
+
+// floatMean is R's mean for double vectors. It divides the sum by the count, or, if the sum overflowed,
+// adds each value already divided by the count. Then it adds the mean deviation from that first
+// estimate, which removes most of the rounding error a single sum leaves.
+func floatMean(values []float64) float64 {
+	count := float64(len(values))
+	sum := 0.0
+	for _, value := range values {
+		sum += value
+	}
+	estimate := sum / count
+	if !isFinite(sum) {
+		estimate = 0
+		for _, value := range values {
+			estimate += value / count
+		}
+	}
+	if !isFinite(estimate) {
+		return estimate
+	}
+
+	residual := 0.0
+	for _, value := range values {
+		residual += value - estimate
+	}
+	return estimate + residual/count
+}
+
+// isInteger reports whether T is an integer type: only integer division truncates 1/2 to 0.
+func isInteger[T Number]() bool {
+	var one T = 1
+	return one/2 == 0
+}
+
+// isFinite reports whether x is neither NaN nor infinite.
+func isFinite(x float64) bool {
+	return !math.IsNaN(x) && !math.IsInf(x, 0)
+}
+
+===== FILE: ../trimmedmean/trimmedmean_test.go =====
+package trimmedmean
+
+import (
+	"errors"
+	"math"
+	"slices"
+	"testing"
+)
+
+// celsius checks that named numeric types are accepted (the ~ in Number).
+type celsius float64
+
+func TestMeanHandComputed(t *testing.T) {
+	oneToTen := []float64{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}
+	cases := []struct {
+		name string
+		got  func() (float64, error)
+		want float64
+	}{
+		{"symmetric ints drop one each end", func() (float64, error) { return Mean([]int{100, 1, 3, 2, 4}, 0.2) }, 3},
+		{"asymmetric floats drop 1 low, 2 high", func() (float64, error) { return Mean(oneToTen, 0.1, 0.2) }, 5},
+		{"asymmetric floats drop 2 low, 1 high", func() (float64, error) { return Mean(oneToTen, 0.2, 0.1) }, 6},
+		{"no proportion is the plain mean", func() (float64, error) { return Mean([]int{1, 2, 3, 4}) }, 2.5},
+		{"zero proportion is the plain mean", func() (float64, error) { return Mean([]float64{1, 2, 3, 4}, 0) }, 2.5},
+		{"trim too small to drop anything", func() (float64, error) { return Mean([]int{1, 2, 3}, 0.1) }, 2},
+		{"int8", func() (float64, error) { return Mean([]int8{-128, 0, 1, 2, 127}, 0.2) }, 1},
+		{"uint64", func() (float64, error) { return Mean([]uint64{1, 2, 3, 1000}, 0.25) }, 2.5},
+		{"float32", func() (float64, error) { return Mean([]float32{0.5, 1.5, 2.5, 99}, 0.25) }, 2},
+		{"named float type", func() (float64, error) { return Mean([]celsius{20, 21, 22, -40, 80}, 0.2) }, 21},
+		{"single value", func() (float64, error) { return Mean([]int{7}, 0.4) }, 7},
+	}
+	for _, tc := range cases {
+		got, err := tc.got()
+		if err != nil {
+			t.Errorf("%s: unexpected error %v", tc.name, err)
+			continue
+		}
+		if got != tc.want {
+			t.Errorf("%s: got %v, want %v", tc.name, got, tc.want)
+		}
+	}
+}
+
+// TestMeanFloorRule checks R's count rule: floor(n * p) in float64, where 100 * 0.29 is
+// 28.999999999999996, so 28 values are dropped, not 29 (spike 001 P1). The upper proportion is 0 so that
+// a wrong count changes the answer: dropping 28 leaves 29..100 (mean 64.5); dropping 29 would leave
+// 30..100 (mean 65).
+func TestMeanFloorRule(t *testing.T) {
+	values := make([]int, 100)
+	for i := range values {
+		values[i] = i + 1
+	}
+	got, err := Mean(values, 0.29, 0)
+	if err != nil || got != 64.5 {
+		t.Fatalf("Mean(1..100, 0.29, 0) = %v, %v; want 64.5 (28 dropped)", got, err)
+	}
+}
+
+// TestMeanIntegerAndFloatPaths checks that integers use R's one-pass mean (one exact sum divided by
+// the count) and floats R's two-pass mean. For these values the two differ in the last digit (spike
+// 001 addendum B, P5).
+func TestMeanIntegerAndFloatPaths(t *testing.T) {
+	integers := []int{10, 1, 12, 14, 6, 30}
+	floats := []float64{10, 1, 12, 14, 6, 30}
+	gotInt, _ := Mean(integers)
+	gotFloat, _ := Mean(floats)
+	if gotInt != 12.166666666666666 {
+		t.Errorf("integer path: got %.17g, want 12.166666666666666", gotInt)
+	}
+	if gotFloat != 12.166666666666668 {
+		t.Errorf("float path: got %.17g, want 12.166666666666668", gotFloat)
+	}
+}
+
+// TestMeanOverflowFallback checks R's fallback when the first sum overflows: the values are re-added
+// divided by the count, so the mean of two huge values is still that value (spike 001 P6).
+func TestMeanOverflowFallback(t *testing.T) {
+	got, err := Mean([]float64{1e308, 1e308})
+	if err != nil || got != 1e308 {
+		t.Fatalf("Mean(1e308, 1e308) = %v, %v; want 1e308", got, err)
+	}
+}
+
+func TestMeanInfinities(t *testing.T) {
+	values := []float64{math.Inf(-1), 1, 2, 3, 4, 5, 6, 7, 8, math.Inf(1)}
+	got, err := Mean(values, 0.1)
+	if err != nil || got != 4.5 {
+		t.Errorf("infinities trimmed away: got %v, %v; want 4.5 as R gives", got, err)
+	}
+	if _, err := Mean(values); !errors.Is(err, ErrNotFinite) {
+		t.Errorf("+Inf and -Inf kept: got %v, want ErrNotFinite", err)
+	}
+}
+
+func TestMeanErrors(t *testing.T) {
+	cases := []struct {
+		name string
+		err  error
+		want error
+	}{
+		{"empty", second(Mean([]int{}, 0.1)), ErrEmpty},
+		{"nil", second(Mean[float64](nil)), ErrEmpty},
+		{"NaN value", second(Mean([]float64{1, math.NaN(), 3})), ErrNaN},
+		{"negative proportion", second(Mean([]int{1, 2, 3}, -0.1)), ErrProportion},
+		{"proportion 0.5", second(Mean([]int{1, 2, 3}, 0.5)), ErrProportion},
+		{"proportion above 0.5", second(Mean([]int{1, 2, 3}, 0.7)), ErrProportion},
+		{"NaN proportion", second(Mean([]int{1, 2, 3}, math.NaN())), ErrProportion},
+		{"invalid upper proportion", second(Mean([]int{1, 2, 3}, 0.1, 0.5)), ErrProportion},
+		{"three proportions", second(Mean([]int{1, 2, 3}, 0.1, 0.1, 0.1)), ErrProportionCount},
+	}
+	for _, tc := range cases {
+		if !errors.Is(tc.err, tc.want) {
+			t.Errorf("%s: got %v, want %v", tc.name, tc.err, tc.want)
+		}
+	}
+}
+
+func TestMeanLeavesInputUnchanged(t *testing.T) {
+	values := []float64{5, 3, 9, 1, 7}
+	original := slices.Clone(values)
+	if _, err := Mean(values, 0.2); err != nil {
+		t.Fatal(err)
+	}
+	if !slices.Equal(values, original) {
+		t.Fatalf("input changed: %v, was %v", values, original)
+	}
+}
+
+// TestMeanKeepsAtLeastOne checks the largest valid proportions on the smallest inputs.
+func TestMeanKeepsAtLeastOne(t *testing.T) {
+	for n := 1; n <= 3; n++ {
+		values := make([]int, n)
+		for i := range values {
+			values[i] = i + 1
+		}
+		if _, err := Mean(values, 0.4999, 0.4999); err != nil {
+			t.Errorf("n = %d: %v", n, err)
+		}
+	}
+}
+
+func TestDropCountsGuard(t *testing.T) {
+	if _, _, err := dropCounts(4, 0.5, 0.5); !errors.Is(err, ErrProportion) {
+		t.Fatalf("counts that leave nothing: got %v, want ErrProportion", err)
+	}
+}
+
+// second returns the error of a (value, error) pair, to keep the table above short.
+func second(_ float64, err error) error { return err }
+
+===== FILE: ../trimmedmean/reference_test.go =====
+package trimmedmean
+
+import (
+	"bufio"
+	"encoding/csv"
+	"math"
+	"os"
+	"path/filepath"
+	"slices"
+	"strconv"
+	"testing"
+)
+
+// floatTolerance bounds |Go - R| for trimmed symmetric float rows, as a multiple of the mean absolute
+// kept value. R adds the kept values in the order its partial sort leaves them; the measured worst gap
+// is 4.7e-16 on that scale (spike 001 addendum B), so this limit is about 20 times it.
+const floatTolerance = 1e-14
+
+// referenceRow is one line of testdata/trimmed-means.tsv.
+type referenceRow struct {
+	sample, kind, method string
+	low, high, value     float64
+	fullSortValue        float64
+	dropLow, dropHigh    int
+}
+
+// TestMeanAgreesWithR checks every R reference row under the rule of spec §7: exact for integers,
+// untrimmed rows and our asymmetric definition; for trimmed symmetric floats, exact against R's own
+// full-sort mean and within floatTolerance of R's built-in.
+func TestMeanAgreesWithR(t *testing.T) {
+	rows := readReference(t)
+	if len(rows) != 84 {
+		t.Fatalf("read %d reference rows, want 84", len(rows))
+	}
+	for _, row := range rows {
+		got, kept := meanOfSample(t, row)
+		exact := row.kind == "integer" || row.method == "defined" || (row.low == 0 && row.high == 0)
+		if exact {
+			if got != row.value {
+				t.Errorf("%s %v/%v: got %.17g, R %.17g (exact)", row.sample, row.low, row.high, got, row.value)
+			}
+			continue
+		}
+		if got != row.fullSortValue {
+			t.Errorf("%s %v: got %.17g, R full-sort %.17g (exact)", row.sample, row.low, got, row.fullSortValue)
+		}
+		if limit := floatTolerance * meanAbsolute(kept); math.Abs(got-row.value) > limit {
+			t.Errorf("%s %v: |%.17g - R %.17g| > %.3g", row.sample, row.low, got, row.value, limit)
+		}
+	}
+}
+
+// TestGoReadsWhatRRead checks that strconv.ParseFloat reads each float sample as exactly the doubles
+// R read from the same file, so both sides average the same numbers.
+func TestGoReadsWhatRRead(t *testing.T) {
+	for _, name := range []string{"floats-100", "floats-101", "floats-1000"} {
+		ours := readColumn(t, filepath.Join("testdata", name+".csv"))
+		theirs := readColumn(t, filepath.Join("testdata", name+"-as-read-by-r.txt"))
+		if len(ours) != len(theirs) {
+			t.Fatalf("%s: %d values, R read %d", name, len(ours), len(theirs))
+		}
+		for i := range ours {
+			if ours[i] != theirs[i] {
+				t.Errorf("%s line %d: Go read %.17g, R read %.17g", name, i+2, ours[i], theirs[i])
+			}
+		}
+	}
+}
+
+// meanOfSample computes the row's trimmed mean with the sample's own element type, and returns the
+// kept values for the tolerance.
+func meanOfSample(t *testing.T, row referenceRow) (float64, []float64) {
+	t.Helper()
+	values := readColumn(t, filepath.Join("testdata", row.sample+".csv"))
+	var got float64
+	var err error
+	if row.kind == "integer" {
+		got, err = Mean(toInts(t, values), row.low, row.high)
+	} else {
+		got, err = Mean(values, row.low, row.high)
+	}
+	if err != nil {
+		t.Fatalf("%s %v/%v: %v", row.sample, row.low, row.high, err)
+	}
+	sorted, _ := toFloat64(values)
+	slices.Sort(sorted)
+	return got, sorted[row.dropLow : len(sorted)-row.dropHigh]
+}
+
+func readReference(t *testing.T) []referenceRow {
+	t.Helper()
+	file, err := os.Open(filepath.Join("testdata", "trimmed-means.tsv"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer file.Close()
+	reader := csv.NewReader(file)
+	reader.Comma = '\t'
+	records, err := reader.ReadAll()
+	if err != nil {
+		t.Fatal(err)
+	}
+	rows := make([]referenceRow, 0, len(records)-1)
+	for _, record := range records[1:] {
+		rows = append(rows, referenceRow{
+			sample: record[0], kind: record[1], method: record[5],
+			low: parse(t, record[3]), high: parse(t, record[4]), value: parse(t, record[6]),
+			dropLow: int(parse(t, record[7])), dropHigh: int(parse(t, record[8])),
+			fullSortValue: parse(t, record[11]),
+		})
+	}
+	return rows
+}
+
+// readColumn reads a one-column file with a "value" header.
+func readColumn(t *testing.T, path string) []float64 {
+	t.Helper()
+	file, err := os.Open(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer file.Close()
+	var values []float64
+	scanner := bufio.NewScanner(file)
+	scanner.Scan() // header
+	for scanner.Scan() {
+		values = append(values, parse(t, scanner.Text()))
+	}
+	if err := scanner.Err(); err != nil {
+		t.Fatal(err)
+	}
+	return values
+}
+
+func toInts(t *testing.T, values []float64) []int {
+	t.Helper()
+	ints := make([]int, len(values))
+	for i, value := range values {
+		ints[i] = int(value)
+		if float64(ints[i]) != value {
+			t.Fatalf("value %v is not an integer", value)
+		}
+	}
+	return ints
+}
+
+func parse(t *testing.T, text string) float64 {
+	t.Helper()
+	value, err := strconv.ParseFloat(text, 64)
+	if err != nil {
+		t.Fatalf("parse %q: %v", text, err)
+	}
+	return value
+}
+
+func meanAbsolute(values []float64) float64 {
+	total := 0.0
+	for _, value := range values {
+		total += math.Abs(value)
+	}
+	return total / float64(len(values))
+}
+
+===== FILE: ../trimmedmean/counts_test.go =====
+package trimmedmean
+
+import (
+	"errors"
+	"math"
+	"testing"
+)
+
+// TestDropCountsProperty checks, for every n from 1 to 105 and a set of proportions up to the largest
+// float64 below 0.5, that the counts equal floor(n*p), are not negative, and keep at least one value
+// (review R1, findings 2.2 and 4.1).
+func TestDropCountsProperty(t *testing.T) {
+	largest := math.Nextafter(0.5, 0)
+	proportions := []float64{0, 0.05, 0.1, 0.2, 0.29, 0.4999, largest}
+	for n := 1; n <= 105; n++ {
+		for _, low := range proportions {
+			for _, high := range proportions {
+				dropLow, dropHigh, err := dropCounts(n, low, high)
+				if err != nil {
+					t.Fatalf("n=%d low=%v high=%v: %v", n, low, high, err)
+				}
+				wantLow, wantHigh := int(math.Floor(float64(n)*low)), int(math.Floor(float64(n)*high))
+				if dropLow != wantLow || dropHigh != wantHigh || dropLow+dropHigh >= n {
+					t.Fatalf("n=%d low=%v high=%v: dropped %d and %d", n, low, high, dropLow, dropHigh)
+				}
+			}
+		}
+	}
+}
+
+// TestDropCountsLargeN checks very large n with the largest proportion below 0.5. Review R1 (finding 2.2)
+// and spec v1 FR-5 suspected that float64 rounding of n*p could reach n/2 and keep nothing; for n below
+// 2^53 it cannot (n*p is n/2 minus more than half a unit in the last place), and this test confirms the
+// counts still keep values. The guard in dropCounts stays as a defensive check (TestDropCountsGuard).
+func TestDropCountsLargeN(t *testing.T) {
+	largest := math.Nextafter(0.5, 0)
+	for _, n := range []int{1 << 20, 1 << 40, 1 << 53} {
+		dropLow, dropHigh, err := dropCounts(n, largest, largest)
+		if err == nil && dropLow+dropHigh >= n {
+			t.Fatalf("n=%d: kept nothing without an error", n)
+		}
+		if err != nil && !errors.Is(err, ErrProportion) {
+			t.Fatalf("n=%d: unexpected error %v", n, err)
+		}
+		t.Logf("n=2^%d: dropLow=%d dropHigh=%d err=%v", int(math.Log2(float64(n))), dropLow, dropHigh, err)
+	}
+}
+
+===== FILE: ../trimmedmean/example_test.go =====
+package trimmedmean_test
+
+import (
+	"errors"
+	"fmt"
+
+	"github.com/mioluigi/trimmedmean"
+)
+
+// One proportion trims symmetrically: 10% of 10 values is one value from each end, so the outlier
+// 1000 and the lowest value 1 are removed before averaging.
+func ExampleMean() {
+	scores := []int{1, 52, 48, 50, 47, 53, 49, 51, 46, 1000}
+	mean, err := trimmedmean.Mean(scores, 0.1)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	fmt.Println(mean)
+	// Output: 49.5
+}
+
+// Two proportions trim the lower and upper ends separately: here nothing from the bottom and 20%
+// (two values) from the top, where the outliers are.
+func ExampleMean_asymmetric() {
+	latencies := []float64{12.5, 11.0, 13.5, 12.0, 250.0, 11.5, 13.0, 12.5, 400.0, 12.0}
+	mean, err := trimmedmean.Mean(latencies, 0, 0.2)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	fmt.Printf("%.4f\n", mean)
+	// Output: 12.2500
+}
+
+// Errors can be tested with errors.Is, and their message names the offending value.
+func ExampleMean_errors() {
+	_, err := trimmedmean.Mean([]float64{1, 2, 3}, 0.6)
+	fmt.Println(errors.Is(err, trimmedmean.ErrProportion))
+	fmt.Println(err)
+	// Output:
+	// true
+	// trimmedmean: trim proportion must be in [0, 0.5): got 0.6
+}
+
+===== FILE: ../trimmedmean/fuzz_test.go =====
+package trimmedmean
+
+import (
+	"encoding/binary"
+	"math"
+	"slices"
+	"testing"
+)
+
+// FuzzMean checks properties that must hold for any input: Mean never panics, and when it succeeds the
+// result lies between the smallest and largest value (a mean of the kept values cannot leave their
+// range). The fuzzer supplies raw bytes, read as float64 values, and two proportions.
+func FuzzMean(f *testing.F) {
+	f.Add([]byte{0, 0, 0, 0, 0, 0, 240, 63}, 0.1, 0.2)
+	f.Add([]byte{}, 0.0, 0.0)
+	f.Fuzz(func(t *testing.T, raw []byte, low, high float64) {
+		values := make([]float64, len(raw)/8)
+		for i := range values {
+			values[i] = math.Float64frombits(binary.LittleEndian.Uint64(raw[i*8:]))
+		}
+		mean, err := Mean(values, low, high)
+		if err != nil {
+			return
+		}
+		if mean < slices.Min(values) || mean > slices.Max(values) {
+			t.Fatalf("mean %v outside [%v, %v] for %v", mean, slices.Min(values), slices.Max(values), values)
+		}
+	})
+}
+
+===== FILE: ../trimmedmean/quality_test.go =====
+package trimmedmean
+
+import (
+	"go/ast"
+	"go/parser"
+	"go/token"
+	"io/fs"
+	"strings"
+	"testing"
+)
+
+// maxFunctionLines is the longest function allowed in the package's source (review R1, finding 3.1:
+// "short functions" made checkable).
+const maxFunctionLines = 40
+
+// TestSourceQuality checks the package's non-test source: every exported identifier has a doc comment,
+// and no function is longer than maxFunctionLines.
+func TestSourceQuality(t *testing.T) {
+	files := token.NewFileSet()
+	packages, err := parser.ParseDir(files, ".", func(info fs.FileInfo) bool {
+		return !strings.HasSuffix(info.Name(), "_test.go")
+	}, parser.ParseComments)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, pkg := range packages {
+		for _, file := range pkg.Files {
+			checkDeclarations(t, files, file)
+		}
+	}
+}
+
+func checkDeclarations(t *testing.T, files *token.FileSet, file *ast.File) {
+	t.Helper()
+	for _, declaration := range file.Decls {
+		switch decl := declaration.(type) {
+		case *ast.FuncDecl:
+			lines := files.Position(decl.End()).Line - files.Position(decl.Pos()).Line + 1
+			if lines > maxFunctionLines {
+				t.Errorf("func %s has %d lines, limit %d", decl.Name.Name, lines, maxFunctionLines)
+			}
+			if decl.Name.IsExported() && decl.Doc == nil {
+				t.Errorf("exported func %s has no doc comment", decl.Name.Name)
+			}
+		case *ast.GenDecl:
+			checkGeneralDeclaration(t, decl)
+		}
+	}
+}
+
+// checkGeneralDeclaration checks types, variables and constants: each exported name needs a doc comment
+// on its own spec or on the enclosing declaration.
+func checkGeneralDeclaration(t *testing.T, decl *ast.GenDecl) {
+	t.Helper()
+	for _, spec := range decl.Specs {
+		switch s := spec.(type) {
+		case *ast.TypeSpec:
+			if s.Name.IsExported() && s.Doc == nil && decl.Doc == nil {
+				t.Errorf("exported type %s has no doc comment", s.Name.Name)
+			}
+		case *ast.ValueSpec:
+			for _, name := range s.Names {
+				if name.IsExported() && s.Doc == nil {
+					t.Errorf("exported %s has no doc comment of its own", name.Name)
+				}
+			}
+		}
+	}
+}
+
+===== END OF BUNDLE (22 files) =====
