@@ -1,1 +1,1 @@
-level=INFO msg="study done" B=100 samples=400 elapsed=624ms
+level=INFO msg="study done" B=100 samples=400 elapsed=629ms
