@@ -1,0 +1,47 @@
+== Fresh clones (package v1.0.0)
+warning: refs/tags/v1.0.0 6fb957d255f1945536653603f6591a3ae2279dea is not a commit!
+Note: switching to '6fd1a6e69097059e8b8bfa48510b687c54f5335b'.
+
+You are in 'detached HEAD' state. You can look around, make experimental
+changes and commit them, and you can discard any commits you make in this
+state without impacting any branches by switching back to a branch.
+
+If you want to create a new branch to retain commits you create, you may
+do so (now or later) by using -c with the switch command. Example:
+
+  git switch -c <new-branch-name>
+
+Or undo this operation with:
+
+  git switch -
+
+Turn off this advice by setting config variable advice.detachedHead to false
+
+PASS  both repositories cloned; package at tag v1.0.0
+== Package github.com/mioluigi/trimmedmean@v1.0.0
+PASS  go.mod has no require and no replace; no go.work (FR-R1, AC-7, AC-8)
+PASS  gofmt reports no file; go vet is clean (AC-16)
+PASS  all package tests pass offline, without R: hand-computed, R reference, examples, counts, quality (AC-1..7, 16)
+PASS  the R reference test ran and passed on this machine (AC-3)
+PASS  package README: install, use, errors, limits, differences from R, tests, licence (FR-R4, AC-13)
+PASS  LICENSE present
+== Program github.com/mioluigi/go-trimmed-mean-demo (fresh clone of main)
+PASS  go.mod requires trimmedmean v1.0.0; no replace; no go.work (FR-7, AC-8)
+PASS  builds from an empty module cache with -mod=readonly, fetching the tag (AC-8)
+PASS  gofmt reports no file; go vet is clean (NFR-1)
+PASS  all program tests pass offline, without R: built-binary exit codes and messages (AC-9, AC-10)
+PASS  samples pass the data gate: 6 files, at least 100 values each (AC-3, S6)
+PASS  the data gate fails on a tampered sample (AC-15)
+PASS  no arguments: exit 0 and 84 of 84 comparisons agree (AC-9)
+PASS  one file, asymmetric: exit 0 (FR-9)
+PASS  trim 0.6: exit 2 (AC-10)
+PASS  build scripts make the macOS binaries, the Windows .exe and the .app (AC-12)
+PASS  README's generated blocks match results/ (AC-14)
+PASS  results/comparison.tsv: every row PASS
+PASS  what was measured is what is submitted: no code or data change since commit 7862922
+PASS  results were measured with trimmedmean v1.0.0
+PASS  CPU and memory profiles of the 1,000,000-value run are committed (NFR-3)
+PASS  program README: get and use the package, build, run, test, results, limits, GenAI Tools (FR-13, AC-13)
+PASS  AI dialogs are indexed: docs/ai-dialogs/README.md lists every file there (AC-13)
+
+acceptance: 24 passed, 0 failed
