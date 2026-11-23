@@ -120,6 +120,21 @@ Small defect found in our own capture script: its manifest listed `MANIFEST.tsv`
 written. Harmless (the other seven hashes are of the final files); the script now skips it, and the committed
 manifest is left as captured rather than edited by hand.
 
+## Addendum D (2026-11-22 21:00): the workspace is not the Mac, again (L-W5-03)
+
+- **What happened.** Acceptance on the Mac (T25) failed two checks: the 7th mixture draw was
+  `89.250447006833582` in Go and `89.250447006833596` in R. The same tests passed in the workspace.
+- **Cause, tested.** Go may fuse `a − b×c` into one multiply-subtract on arm64 (Apple silicon) but not on the
+  workspace's amd64. One expression in `qnorm`'s central branch, `0.180625 − q×q`, was not protected by an
+  explicit `float64()` conversion, unlike every other product. Emulating the fusion in the workspace with
+  `math.FMA(−q, q, 0.180625)` reproduced the Mac's value exactly; R's `qnorm` does not fuse (addendum C).
+- **Fix.** `0.180625 − float64(q×q)`; a search of `internal/rrand`, `internal/study` and the package found no
+  other unprotected product-sum. The official run is repeated, because its bootstrap results came from the
+  arm64 arithmetic.
+- **Lesson candidate.** When bit-exact agreement matters, every `a×b ± c` in Go needs an explicit conversion
+  (or an explicit `math.FMA`), and only the official machine's run is evidence: the acceptance script caught
+  what the workspace could not.
+
 ## 5. Pre-mortem: "It is after midnight and this project failed. Why?"
 
 | # | Cause | Guard |

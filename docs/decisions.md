@@ -5,6 +5,8 @@ were taken under the deadline with Claude's recommendation, for Luis to overturn
 
 ## 2026-11-22
 
+- **Fix after acceptance failed on the Mac (T26):** one unprotected `0.180625 − q×q` in `qnorm` was fused by Go on
+  arm64 (spike 001 addendum D); fixed, then the official run and acceptance repeated.
 - **Spec 002 (bootstrap study) approved by Luis at ~20:30 ET, as recommended (with the textbook column).** R's
   reference captured from the course file run unchanged (`6ad3eb8`); the course file is not committed. Spike
   001 addendum C records the results; `scripts/capture-bootstrap-r.sh` no longer lists its own manifest.

@@ -64,7 +64,9 @@ var (
 func quantile(p float64, fused bool) float64 {
 	q := p - 0.5
 	if math.Abs(q) <= 0.425 {
-		r := 0.180625 - q*q
+		// float64() stops Go on arm64 from fusing this into one multiply-subtract, which R's qnorm does
+		// not do: found by acceptance on the Mac (draw 7 of the course's mixture), spike 001 addendum D.
+		r := 0.180625 - float64(q*q)
 		return q * horner(r, centralNumerator, fused) / horner(r, centralDenominator, fused)
 	}
 	tailProbability := p
